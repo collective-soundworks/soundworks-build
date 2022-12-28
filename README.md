@@ -1,8 +1,8 @@
 # `@soundworks/build`
 
-Build tools for [`soundworks`](https://soundworks.dev) applications, based on `babel` and `webpack`
+Build tools for [`soundworks`](https://soundworks.dev) applications, based on `babel` and `webpack`.
 
-_WARNING_: The `@soundworks/build` package targets `soundworks#v4` which is still under heavy development.
+*__WARNING: The `@soundworks/build` package targets `soundworks#v4` which is still under heavy development.__*
 
 ## Install
 
