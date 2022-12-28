@@ -5,7 +5,7 @@
   ],
   "description": "developper tools for soundworks applications",
   "license": "BSD-3-Clause",
-  "version": "3.2.0",
+  "version": "0.0.0",
   "type": "module",
   "bin": {
     "soundworks-build": "./bin/soundworks-build.js"
@@ -18,8 +18,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/collective-soundworks/soundworks-template-build"
+    "url": "https://github.com/collective-soundworks/soundworks-build"
   },
+  "bugs": {
+    "url": "https://github.com/collective-soundworks/soundworks-build/issues"
+  },
+  "homepage": "https://github.com/collective-soundworks/soundworks-build#readme",
+  "keywords": [
+    "soundworks"
+  ],
   "dependencies": {
     "@babel/core": "^7.19.6",
     "@babel/preset-env": "^7.19.4",
