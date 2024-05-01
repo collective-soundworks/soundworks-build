@@ -1,251 +1,192 @@
 import path from 'node:path';
-import os from 'node:os';
+import { EOL } from 'node:os';
 import { createRequire } from 'node:module';
 
-import babel from '@babel/core';
+import { AnsiUp } from 'ansi_up';
 import chalk from 'chalk';
 import chokidar from 'chokidar';
+import * as esbuild from 'esbuild';
 import fs from 'fs-extra';
 import JSON5 from 'json5';
 import klawSync from 'klaw-sync';
-import webpack from 'webpack';
-// import sm from 'source-map';
+import swc from '@swc/core';
 
 const cwd = process.cwd();
-// for clean resolve even if using `npm link`:
-// https://github.com/facebook/create-react-app/blob/7408e36478ea7aa271c9e16f51444547a063b400/packages/babel-preset-react-app/index.js#L15
-const require = createRequire(import.meta.url);
-
-// @todo - if app config says typescript, use /\.(js|mjs|ts|tsx)$/
 const supportedFilesRegExp = /\.(js|jsx|mjs|ts|tsx)$/;
 
-// @todo - remove this...
-// we need support for iOS 9.3.5
-// const browserList = 'ios >= 9, not ie 11, not op_mini all';
-
-/**
- * All babel plugins we use are contained in the preset-env, so no need to
- * have them in dependencies.
- */
-async function transpile(inputFolder, outputFolder, watch) {
+async function compile(inputFolder, outputFolder, watch) {
   async function compileOrCopy(pathname) {
     if (fs.lstatSync(pathname).isDirectory()) {
-      return Promise.resolve();
+      return;
     }
 
     const inputFilename = pathname;
     const outputFilename = inputFilename
       .replace(inputFolder, outputFolder)
-      .replace(/\.ts[x]?$/, '.js');
+      .replace(supportedFilesRegExp, '.js');
+
+    fs.ensureDirSync(path.dirname(outputFilename));
 
     if (supportedFilesRegExp.test(inputFilename)) {
       try {
         const sourceFileName = path.relative(path.dirname(outputFilename), inputFilename);
 
-        let { code, map } = await babel.transformFileAsync(inputFilename, {
-          sourceMap: true,
+        let { code, map } = await swc.transformFile(inputFilename, {
+          sourceMaps: true,
+          // Path to "real" file to create source maps
           sourceFileName,
-          presets: [],
-          plugins: [],
+          // These files will only be executed by node so we can safely
+          // target newer version of javascript
+          // This settings the precedence over the .swcrc file
+          jsc: {
+            target: 'es2022',
+          },
         });
 
-        code += `
-//# sourceMappingURL=./${path.basename(outputFilename)}.map`;
+        code += `${EOL}//# sourceMappingURL=./${path.basename(outputFilename)}.map`;
 
-        fs.outputFileSync(outputFilename, code);
-        fs.outputJsonSync(`${outputFilename}.map`, map);
+        fs.writeFileSync(outputFilename, code, { recursive: true });
+        fs.writeFileSync(`${outputFilename}.map`, map, { recursive: true });
 
-        console.log(chalk.green(`> transpiled\t ${inputFilename}`));
-        return Promise.resolve();
+        console.log(chalk.green(`> compiled\t ${inputFilename}`));
       } catch (err) {
-        console.error(chalk.red('- transpile error:'));
         console.error(err.message);
-        return Promise.resolve();
       }
     } else {
       try {
-        fs.ensureDirSync(path.dirname(outputFilename));
         fs.copyFileSync(inputFilename, outputFilename);
         console.log(chalk.green(`> copied\t ${inputFilename}`));
-        return Promise.resolve();
       } catch(err) {
         console.error(err.message);
-        return Promise.resolve();
       }
     }
   }
 
   if (!watch) {
     const files = klawSync(inputFolder);
-    const relFiles = files.map(f => path.relative(process.cwd(), f.path));
-    const promises = relFiles.map(f => compileOrCopy(f));
+    const promises = files
+      .map(file => path.relative(process.cwd(), file.path))
+      .map(pathname => compileOrCopy(pathname));
     return Promise.all(promises);
   } else {
-    const chokidarOptions = watch ? { ignoreInitial: true } : {};
-    const watcher = chokidar.watch(inputFolder, chokidarOptions);
+    const watcher = chokidar.watch(inputFolder, { ignoreInitial: true });
 
     watcher.on('add', pathname => compileOrCopy(pathname));
     watcher.on('change', pathname => compileOrCopy(pathname));
     watcher.on('unlink', pathname => {
       const outputFilename = pathname.replace(inputFolder, outputFolder);
       fs.unlinkSync(outputFilename);
-    });
+      fs.unlinkSync(`${outputFilename}.map`);
 
-    return Promise.resolve();
+      console.log(chalk.green(`> deleted\t ${outputFilename}`));
+    });
   }
 }
 
-async function bundle(inputFile, outputFile, watch, minify) {
-  let mode = 'development';
-  let devTools = 'source-map';
+function writeErrorInOutputFile(err, outputFile) {
+  // escape string literals so that we can insert them in the log string literal message
+  const msg = err.message
+    .replace(/`/g, '\\`')
+    .replace(/\$\{/g, '\\${');
 
-  const babelPresets = [
-    [require.resolve('@babel/preset-env')]
-  ];
+  const ansiUp = new AnsiUp();
+  const html = ansiUp.ansi_to_html(msg);
+  const style = 'width: 100%; margin: 20px; padding: 20px; font-size: 12px; background-color: white; color: #121212; border: 1px solid #d9534f; border-radius: 1px;';
 
-  // production
-  if (minify) {
-    mode = 'production';
-    devTools = false;
+  const jsErrorFile = `
+document.body.innerHTML = \`<pre style="${style}"><code>${html}</code></pre>\`;
+console.log(\`${msg}\`);
+  `;
+
+  fs.writeFileSync(outputFile, jsErrorFile);
+}
+
+const esbuildSwcPlugin = {
+  name: 'swc',
+  setup(build) {
+    build.onLoad({ filter: /.*/ }, async args => {
+      const inputFilename = args.path;
+      const contents = await fs.promises.readFile(inputFilename, 'utf8');
+
+      try {
+        let { code } = await swc.transformFile(inputFilename, {
+          sourceMaps: 'inline',
+        });
+
+        return { contents: code };
+      } catch (err) {
+        throw err;
+      }
+    });
+
+    build.onEnd(result => {
+      const outputFile = path.relative(cwd, build.initialOptions.outfile);
+
+      if (result.errors.length > 0) {
+        result.errors.forEach(error => {
+          const err = new Error(error.text);
+          writeErrorInOutputFile(err, outputFile);
+        });
+      } else {
+        for (let filename in result.metafile.outputs) {
+          console.log(chalk.green(`> bundled\t ${filename}`));
+        }
+      }
+    });
   }
+};
 
-  let config = {
-    mode: mode,
-    devtool: devTools,
-    entry: inputFile,
-    // 'es5' flag is important to support iOS 9.3
-    // see https://stackoverflow.com/questions/54039337/how-to-remove-arrow-functions-from-webpack-output
-    // target: ['web', 'es5'],
-    target: ['web'],
-    cache: {
-      type: 'filesystem',
-    },
-    output: {
-      path: path.dirname(outputFile),
-      filename: path.basename(outputFile),
-    },
-    module: {
-      rules: [
-        {
-          test: supportedFilesRegExp,
-          use: {
-            loader: require.resolve('babel-loader'),
-            options: {
-              cacheDirectory: true,
-              // this makes errors more readable in browsers' console. As the file
-              // is in any case also simply transpiled by babel we also have the
-              // error with syntaxx highlighting in the terminal console
-              highlightCode: false,
-              presets: babelPresets,
-              plugins: [
-                // [require.resolve('@babel/plugin-transform-arrow-functions')],
-                // [require.resolve('@babel/plugin-proposal-class-properties')],
-              ],
-            }
-          }
-        },
-        // simple hack to inline WebWorkers
-        // @todo - needs review to have common syntax client side and server side
-        // as well as to handle AudioWorlet...
-        {
-          resourceQuery: /inline/,
-          type: 'asset/source',
-        },
-      ],
-    },
-  };
-
-  // allow extending webpack config sfrom application
-  const webpackExtend = path.join(cwd, 'webpack.config.js');
-
-  if (fs.existsSync(webpackExtend)) {
-    let module = await import(webpackExtend);
-    config = module.default(config);
-  }
-
-  // @todo - if the target application have some webpack.config.js file
-  // it should be taken into account
-  const compiler = webpack(config);
-
-  function filterStackTrace(err) {
-    return err.toString()
-      .split(/[\r\n]+/)
-      .filter(line => ! line.match(/^\s+at/))
-      .join(os.EOL);
-  }
-
+async function bundle(inputFile, outputFile, watch) {
   if (!watch) {
-    return new Promise((resolve, reject) => {
-      compiler.run((err, stats) => {
-        if (err || stats.hasErrors()) {
-          // console.log(stats.compilation.errors[0].error.code);
-          // no need to log these errors in the console, this is already done by babel
-          if (stats.compilation.errors[0].error.code !== 'BABEL_PARSE_ERROR') {
-            const err = filterStackTrace(stats.compilation.errors[0]);
-            console.error(chalk.red('- build error:'));
-            console.error(err);
-          }
-
-          console.error(chalk.red(`- build failed   ${outputFile.replace(cwd, '')}`));
-          resolve();
-          return;
-        }
-
-        console.log(chalk.green(`> bundled\t ${outputFile.replace(cwd, '')}`));
-        resolve();
+    try {
+      await esbuild.build({
+        entryPoints: [inputFile],
+        outfile: outputFile,
+        bundle: true,
+        format: 'esm',
+        minify: true,
+        sourcemap: 'linked',
+        metafile: true,
+        plugins: [esbuildSwcPlugin],
       });
-    });
+    } catch(err) {
+      // just swallow errors as we don't want the process
+      // to return on first bundle pass
+    }
   } else {
-    let initial = true;
-    // we can't ignore initial build, so let's keep everything sequencial
-    return new Promise((resolve, reject) => {
-      const watching = compiler.watch({
-        aggregateTimeout: 300,
-        poll: undefined
-      }, (err, stats) => { // Stats Object
-        if (err || stats.hasErrors()) {
-          // no need to log these errors in the console, this is already done by babel
-          const err = filterStackTrace(stats.compilation.errors[0]);
-          console.error(chalk.red('- build error:'));
-          console.error(err);
-
-          console.error(chalk.red(`- build failed   ${outputFile.replace(cwd, '')}`));
-          initial = false; // if next build works we want to log it
-          resolve();
-          return;
-        }
-
-        // do not log the first build, this is confusing
-        if (!initial) {
-          console.log(chalk.green(`> bundled\t ${outputFile.replace(cwd, '')}`));
-        }
-
-        initial = false;
-        resolve();
-      });
+    const ctx = await esbuild.context({
+      entryPoints: [inputFile],
+      outfile: outputFile,
+      bundle: true,
+      format: 'esm',
+      minify: true,
+      sourcemap: 'linked',
+      metafile: true,
+      plugins: [esbuildSwcPlugin],
     });
+
+    await ctx.watch();
   }
 }
 
-
-export default async function buildApplication(watch = false, minifyBrowserClients = false) {
-  /**
-   * BUILD STRATEGY
-   * -------------------------------------------------------------
-   *
-   * cf. https://github.com/collective-soundworks/soundworks/issues/23
-   *
-   * 1. copy * from `src` into `.build` keeping file system and structure
-   *    intact, we keep the copy to allow further support (typescript, etc.)
-   * 2. find browser clients in `src/clients` from `config/application`
-   *    and build them into .build/public` using` webpack
-   *
-   * @note:
-   * - exit with error message if `src/public` exists (reserved path)
-   *
-   * -------------------------------------------------------------
-   */
-
+/**
+ * BUILD STRATEGY
+ * -------------------------------------------------------------
+ *
+ * cf. https://github.com/collective-soundworks/soundworks/issues/23
+ *
+ * 1. Copy * from `src` into `.build` keeping file system and structure
+ *    intact, we keep the copy to allow further support (typescript, etc.)
+ *    This allows to not impose further structure to client code.
+ * 2. Find browser clients in `src/clients` from `config/application`
+ *    and build them into .build/public` using` webpack
+ *
+ * @note:
+ * - exit with error message if `src/public` exists (reserved path)
+ * -------------------------------------------------------------
+ */
+export default async function buildApplication(watch = false) {
+  // `src/public` cannot be used, is reserved by build system
   if (fs.existsSync(path.join('src', 'public'))) {
     console.error(chalk.red(`[@soundworks/template-build]
 > The path "src/public" is reserved by the application build process.
@@ -253,69 +194,43 @@ export default async function buildApplication(watch = false, minifyBrowserClien
     process.exit(0);
   }
 
-  // transpiling `src` to `.build`
-  {
-    const cmdString = watch ? 'watching' : 'transpiling';
-    console.log(chalk.yellow(`+ ${cmdString} \`src\` to \`.build\``));
+  // 1. Transpile `src` to `.build`
+  const compileMsg = `+ ${watch ? 'watching' : 'transpiling'} \`src\` to \`.build\``;
+  console.log(chalk.yellow(compileMsg));
+  await compile('src', '.build', watch);
 
-    await transpile('src', '.build', watch);
+  // 2. Build "browser" clients from `src` to `.build/public`
+  // Get application config file get list of declared browser clients
+  let clientsConfig = null;
+  try {
+    const configData = fs.readFileSync(path.join(cwd, 'config', 'application.json'));
+    clientsConfig = JSON5.parse(configData).clients;
+  } catch(err) {
+    console.error(chalk.red(`[@soundworks/build] Invalid \`config/application.json\` file`));
+    process.exit(0);
   }
 
-  // building "browser" clients from `src` to `.build/public`
-  {
-    const cmdString = watch ? 'watching' : 'building';
-    let clientsConfig = null;
-    // parse config/application
-    try {
-      const configData = fs.readFileSync(path.join(cwd, 'config', 'application.json'));
-      const config = JSON5.parse(configData);
-      clientsConfig = config.clients;
-    } catch(err) {
-      console.error(chalk.red(`[@soundworks/build] Invalid \`config/application.json\` file`));
-      process.exit(0);
-    }
+  // Find valid "browsers" clients paths
+  const clientsSrc = path.join('src', 'clients');
+  const filenames = fs.readdirSync(clientsSrc);
+  const clients = filenames
+    .filter(filename => {
+      const clientPath = path.join(clientsSrc, filename);
+      const isDir = fs.lstatSync(clientPath).isDirectory();
+      return isDir;
+    }).filter(dirname => {
+      return clientsConfig[dirname] && clientsConfig[dirname].target === 'browser';
+    });
 
-    // find "browsers" clients paths
-    const clientsSrc = path.join('src', 'clients');
-    const filenames = fs.readdirSync(clientsSrc);
-    const clients = filenames
-      .filter(filename => {
-        const relPath = path.join(clientsSrc, filename);
-        const isDir = fs.lstatSync(relPath).isDirectory();
-        return isDir;
-      }).filter(dirname => {
-        return clientsConfig[dirname] && clientsConfig[dirname].target === 'browser';
-      });
+  // Bundle all valid declared client
+  for (let clientName of clients) {
+    const bundleMsg = `+ ${watch ? 'watching' : 'bundling'} browser client "${clientName}"`;
+    console.log(chalk.yellow(bundleMsg));
 
-    // the for loop is needed to keep things synced
-    for (let clientName of clients) {
-      console.log(chalk.yellow(`+ ${cmdString} browser client "${clientName}"`));
+    const inputFile = path.join(cwd, 'src', 'clients', clientName, 'index.js');
+    const outputFile = path.join(cwd, '.build', 'public', `${clientName}.js`);
 
-      const jsInput = path.join(cwd, '.build', 'clients', clientName, 'index.js');
-      // const tsInput = path.join(cwd, '.build', 'clients', clientName, 'index.ts');
-      const inputFile = path.join(cwd, '.build', 'clients', clientName, 'index.js');
-
-      // if (fs.existsSync(jsInput)) {
-      //   inputFile = jsInput;
-      // } else if (fs.existsSync(tsInput)) {
-      //   inputFile = tsInput;
-      // } else {
-      //   throw new Error(`[@soundworks/build] Invalid client entry point for "${clientName}", no "input.js" nor "input.ts" file found`);
-      // }
-
-      // console.log(inputFile);
-
-      const outputFile = path.join(cwd, '.build', 'public', `${clientName}.js`);
-      await bundle(inputFile, outputFile, watch);
-
-      if (minifyBrowserClients) {
-        console.log(chalk.yellow(`+ minifying browser client "${clientName}"`));
-
-        const minOutputFile = path.join(cwd, '.build', 'public', `${clientName}.min.js`);
-
-        await bundle(inputFile, minOutputFile, watch, true);
-      }
-    }
+    bundle(inputFile, outputFile, watch);
   }
 
   process.on('SIGINT', function() {
@@ -323,5 +238,3 @@ export default async function buildApplication(watch = false, minifyBrowserClien
     process.exit();
   });
 }
-
-

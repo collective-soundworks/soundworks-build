@@ -11,7 +11,7 @@ import terminate from 'terminate';
 const processes = new Map();
 
 // run the in a forked process
-const start = async function(src, inspect) {
+const start = async function(src, debug) {
   if (!fs.existsSync(src)) {
     console.log(chalk.red(`
 Cannot start process: file "${src}" does not exists.
@@ -30,13 +30,13 @@ Cannot start process: file "${src}" does not exists.
       await stop(src);
     }
 
-    const options = inspect
+    const options = debug
       ? { execArgv: ['--inspect', '--trace-deprecation'] }
       : {};
 
     Object.assign(options, { stdio: 'inherit' });
 
-    const delay = inspect ? 100 : 0;
+    const delay = debug ? 100 : 0;
 
     // @important - the timeout is needed for the inspect to properly exit
     // the value has been chosen by "rule of thumb"
@@ -66,7 +66,7 @@ const stop = async function(src) {
   });
 }
 
-export default function watchProcess(processName, inspect) {
+export default function watchProcess(processName, debug) {
   let processPath = null;
 
   if (processName === 'server') {
@@ -109,18 +109,7 @@ export default function watchProcess(processName, inspect) {
 
   console.log(chalk.cyan(`> watching process\t ${processPath}`));
 
-  watcher.on('change', debounce(filename => start(processPath, inspect), 500))
+  watcher.on('change', debounce(filename => start(processPath, debug), 500))
   // as we ignore initial changes we can start the process now
-  start(processPath, inspect);
+  start(processPath, debug);
 }
-
-
-
-
-
-
-
-
-
-
-
