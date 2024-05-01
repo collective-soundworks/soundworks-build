@@ -12,67 +12,71 @@ import klawSync from 'klaw-sync';
 import swc from '@swc/core';
 
 const cwd = process.cwd();
+const cwdRegExp = new RegExp(cwd, 'g');
 const supportedFilesRegExp = /\.(js|jsx|mjs|ts|tsx)$/;
 
-async function compile(inputFolder, outputFolder, watch) {
-  async function compileOrCopy(pathname) {
-    if (fs.lstatSync(pathname).isDirectory()) {
-      return;
-    }
-
-    const inputFilename = pathname;
-    const outputFilename = inputFilename
-      .replace(inputFolder, outputFolder)
-      .replace(supportedFilesRegExp, '.js');
-
-    fs.ensureDirSync(path.dirname(outputFilename));
-
-    if (supportedFilesRegExp.test(inputFilename)) {
-      try {
-        const sourceFileName = path.relative(path.dirname(outputFilename), inputFilename);
-
-        let { code, map } = await swc.transformFile(inputFilename, {
-          sourceMaps: true,
-          // Path to "real" file to create source maps
-          sourceFileName,
-          // These files will only be executed by node so we can safely
-          // target newer version of javascript
-          // This settings the precedence over the .swcrc file
-          jsc: {
-            target: 'es2022',
-          },
-        });
-
-        code += `${EOL}//# sourceMappingURL=./${path.basename(outputFilename)}.map`;
-
-        fs.writeFileSync(outputFilename, code, { recursive: true });
-        fs.writeFileSync(`${outputFilename}.map`, map, { recursive: true });
-
-        console.log(chalk.green(`> compiled\t ${inputFilename}`));
-      } catch (err) {
-        console.error(err.message);
-      }
-    } else {
-      try {
-        fs.copyFileSync(inputFilename, outputFilename);
-        console.log(chalk.green(`> copied\t ${inputFilename}`));
-      } catch(err) {
-        console.error(err.message);
-      }
-    }
+// ------------------------------------------------------
+// Compiler section
+// ------------------------------------------------------
+async function doCompileOrCopy(pathname, inputFolder, outputFolder) {
+  if (fs.lstatSync(pathname).isDirectory()) {
+    return;
   }
 
+  const inputFilename = pathname;
+  const outputFilename = inputFilename
+    .replace(inputFolder, outputFolder)
+    .replace(supportedFilesRegExp, '.js');
+
+  fs.ensureDirSync(path.dirname(outputFilename));
+
+  if (supportedFilesRegExp.test(inputFilename)) {
+    try {
+      const sourceFileName = path.relative(path.dirname(outputFilename), inputFilename);
+
+      let { code, map } = await swc.transformFile(inputFilename, {
+        sourceMaps: true,
+        // Path to "real" file to create source maps
+        sourceFileName,
+        // These files will only be executed by node so we can safely
+        // target newer version of javascript
+        // This settings the precedence over the .swcrc file
+        jsc: {
+          target: 'es2022',
+        },
+      });
+
+      code += `${EOL}//# sourceMappingURL=./${path.basename(outputFilename)}.map`;
+
+      fs.writeFileSync(outputFilename, code, { recursive: true });
+      fs.writeFileSync(`${outputFilename}.map`, map, { recursive: true });
+
+      console.log(chalk.green(`> compiled\t ${inputFilename}`));
+    } catch (err) {
+      console.error(err.message);
+    }
+  } else {
+    try {
+      fs.copyFileSync(inputFilename, outputFilename);
+      console.log(chalk.green(`> copied\t ${inputFilename}`));
+    } catch(err) {
+      console.error(err.message);
+    }
+  }
+}
+
+async function compile(inputFolder, outputFolder, watch) {
   if (!watch) {
     const files = klawSync(inputFolder);
     const promises = files
       .map(file => path.relative(process.cwd(), file.path))
-      .map(pathname => compileOrCopy(pathname));
+      .map(pathname => doCompileOrCopy(pathname, inputFolder, outputFolder));
     return Promise.all(promises);
   } else {
     const watcher = chokidar.watch(inputFolder, { ignoreInitial: true });
 
-    watcher.on('add', pathname => compileOrCopy(pathname));
-    watcher.on('change', pathname => compileOrCopy(pathname));
+    watcher.on('add', pathname => doCompileOrCopy(pathname, inputFolder, outputFolder));
+    watcher.on('change', pathname => doCompileOrCopy(pathname, inputFolder, outputFolder));
     watcher.on('unlink', pathname => {
       const outputFilename = pathname.replace(inputFolder, outputFolder);
       fs.unlinkSync(outputFilename);
@@ -83,11 +87,16 @@ async function compile(inputFolder, outputFolder, watch) {
   }
 }
 
-function writeErrorInOutputFile(err, outputFile) {
-  // escape string literals so that we can insert them in the log string literal message
-  const msg = err.message
+// ------------------------------------------------------
+// Bundler section
+// ------------------------------------------------------
+function writeErrorInOutputFile(errorMessage, outputFile) {
+  // - escape string literals so that we can insert them in the log string literal message
+  // - remove `cwd` from pathnames to make them more readable
+  const msg = errorMessage
     .replace(/`/g, '\\`')
-    .replace(/\$\{/g, '\\${');
+    .replace(/\$\{/g, '\\${')
+    .replace(cwdRegExp, '.');
 
   const ansiUp = new AnsiUp();
   const html = ansiUp.ansi_to_html(msg);
@@ -123,10 +132,9 @@ const esbuildSwcPlugin = {
       const outputFile = path.relative(cwd, build.initialOptions.outfile);
 
       if (result.errors.length > 0) {
-        result.errors.forEach(error => {
-          const err = new Error(error.text);
-          writeErrorInOutputFile(err, outputFile);
-        });
+        // write first error in outputFile to have feedback on client side
+        const error = result.errors[0];
+        writeErrorInOutputFile(error.text, outputFile);
       } else {
         for (let filename in result.metafile.outputs) {
           console.log(chalk.green(`> bundled\t ${filename}`));
@@ -168,6 +176,7 @@ async function bundle(inputFile, outputFile, watch) {
     await ctx.watch();
   }
 }
+
 
 /**
  * BUILD STRATEGY
