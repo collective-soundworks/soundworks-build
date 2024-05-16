@@ -1,12 +1,16 @@
-# `@soundworks/build`
+# soundworks | build
 
-Build tools for [`soundworks`](https://soundworks.dev) applications, based on `babel` and `webpack`.
+Build tools for [`soundworks`](https://soundworks.dev) applications.
 
-*__WARNING: The `@soundworks/build` package targets `soundworks#v4` which is still under heavy development.__*
+The build tools are based on:
+- [swc](https://swc.rs/)
+- [esbuild](https://esbuild.github.io/)
 
 ## Install
 
-Note that the `@soundworks/build` package is automatically installed when creating an application using the `@soundworks/create` wizard, so most of the time you should not have to install this package manually. See [https://soundworks.dev/guides/getting-started.html](https://soundworks.dev/guides/getting-started.html) for more informations on the `soundworks` wizard.
+Note that the `@soundworks/build` package is automatically installed when creating an application using the `@soundworks/create` wizard and heavily rely on the file structure defined in the generated template, so most of the time you should not have to install this package manually. 
+
+See [https://soundworks.dev/guides/getting-started.html](https://soundworks.dev/guides/getting-started.html) for more informations on the `soundworks` wizard.
 
 ```
 npm install --save @soundworks/build
@@ -14,19 +18,20 @@ npm install --save @soundworks/build
 
 ## Usage
 
-As for the installation, the commands provided by `@soundworks/build` are consumed by npm scripts in applications created using the `@soundworks/create` wizard, so most of the time you should have to use these commands manually. Refer to the README file of your application to see the available npm commands.
+As for the installation, the commands provided by `@soundworks/build` are used by npm scripts in applications created using the `@soundworks/create` wizard, so most of the time you should have to use these commands directly. 
+
+Refer to the `README.md` file of your application to see the available npm commands.
 
 ```
 Usage: soundworks-build [options]
 
 Options:
   -b, --build                 build application
-  -w, --watch                 watch file system to rebuild application (use in conjunction with --build)
-  -m, --minify                minify browser js files on build  (use in conjunction with --build)
-  -p, --watch-process <name>  restart a node process on each build
-  -d, --debug                 enable debug features (inspect, source-maps) when watching a process
+  -w, --watch                 watch file system to rebuild application, use in conjunction with --build flag
+  -p, --watch-process <name>  restart a node process when its sources
+  -i, --inspect               watch process with --inspect flag, use in conjunction with --watch-process flag
   -D, --delete-build          delete .build directory
-  -C, --clear-cache           clear webpack cache
+  -d, --debug                 [deprecated] alias for --inspect to support legacy scripts
   -h, --help                  display help for command
 ```
 

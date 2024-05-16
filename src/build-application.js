@@ -40,7 +40,7 @@ async function doCompileOrCopy(pathname, inputFolder, outputFolder) {
         sourceFileName,
         // These files will only be executed by node so we can safely
         // target newer version of javascript
-        // This settings the precedence over the .swcrc file
+        // This settings has precedence over the .swcrc file
         jsc: {
           target: 'es2022',
         },
@@ -177,7 +177,6 @@ async function bundle(inputFile, outputFile, watch) {
   }
 }
 
-
 /**
  * BUILD STRATEGY
  * -------------------------------------------------------------
@@ -216,7 +215,7 @@ export default async function buildApplication(watch = false) {
     clientsConfig = JSON5.parse(configData).clients;
   } catch(err) {
     console.error(chalk.red(`[@soundworks/build] Invalid \`config/application.json\` file`));
-    process.exit(0);
+    process.exit(1);
   }
 
   // Find valid "browsers" clients paths
@@ -244,6 +243,6 @@ export default async function buildApplication(watch = false) {
 
   process.on('SIGINT', function() {
     console.log(chalk.cyan('\n>>> EXIT'))
-    process.exit();
+    process.exit(0);
   });
 }
