@@ -145,34 +145,27 @@ const esbuildSwcPlugin = {
 };
 
 async function bundle(inputFile, outputFile, watch) {
+  const options = {
+    entryPoints: [inputFile],
+    outfile: outputFile,
+    bundle: true,
+    format: 'esm',
+    minify: true,
+    keepNames: true, // important for instanceof checks
+    sourcemap: 'linked',
+    metafile: true,
+    plugins: [esbuildSwcPlugin],
+  };
+
   if (!watch) {
     try {
-      await esbuild.build({
-        entryPoints: [inputFile],
-        outfile: outputFile,
-        bundle: true,
-        format: 'esm',
-        minify: true,
-        sourcemap: 'linked',
-        metafile: true,
-        plugins: [esbuildSwcPlugin],
-      });
+      await esbuild.build(options);
     } catch(err) {
       // just swallow errors as we don't want the process
       // to return on first bundle pass
     }
   } else {
-    const ctx = await esbuild.context({
-      entryPoints: [inputFile],
-      outfile: outputFile,
-      bundle: true,
-      format: 'esm',
-      minify: true,
-      sourcemap: 'linked',
-      metafile: true,
-      plugins: [esbuildSwcPlugin],
-    });
-
+    const ctx = await esbuild.context(options);
     await ctx.watch();
   }
 }
