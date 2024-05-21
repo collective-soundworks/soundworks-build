@@ -31,7 +31,6 @@ Options:
   -p, --watch-process <name>  restart a node process when its sources
   -i, --inspect               watch process with --inspect flag, use in conjunction with --watch-process flag
   -D, --delete-build          delete .build directory
-  -d, --debug                 [deprecated] alias for --inspect to support legacy scripts
   -h, --help                  display help for command
 ```
 
