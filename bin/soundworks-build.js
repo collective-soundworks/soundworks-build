@@ -12,6 +12,7 @@ program
   .option('-m, --minify', 'minify browser js files on build  (use in conjunction with --build)')
   .option('-p, --watch-process <name>', 'restart a node process on each build')
   .option('-d, --debug', 'enable debug features (inspect, source-maps) when watching a process')
+  .option('-i, --inspect', 'launch run inspector when watching a process')
   .option('-D, --delete-build', 'delete .build directory')
   .option('-C, --clear-cache', 'clear webpack cache')
 ;
