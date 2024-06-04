@@ -3,10 +3,10 @@ import os from 'node:os';
 import { createRequire } from 'node:module';
 
 import babel from '@babel/core';
+import loadConfig from '@soundworks/helpers/load-config.js';
 import chalk from 'chalk';
 import chokidar from 'chokidar';
 import fs from 'fs-extra';
-import JSON5 from 'json5';
 import klawSync from 'klaw-sync';
 import webpack from 'webpack';
 // import sm from 'source-map';
@@ -264,16 +264,8 @@ export default async function buildApplication(watch = false, minifyBrowserClien
   // building "browser" clients from `src` to `.build/public`
   {
     const cmdString = watch ? 'watching' : 'building';
-    let clientsConfig = null;
-    // parse config/application
-    try {
-      const configData = fs.readFileSync(path.join(cwd, 'config', 'application.json'));
-      const config = JSON5.parse(configData);
-      clientsConfig = config.clients;
-    } catch(err) {
-      console.error(chalk.red(`[@soundworks/build] Invalid \`config/application.json\` file`));
-      process.exit(0);
-    }
+    const config = loadConfig(process.env.ENV);
+    const clientsConfig = config.app.clients;
 
     // find "browsers" clients paths
     const clientsSrc = path.join('src', 'clients');
@@ -291,21 +283,9 @@ export default async function buildApplication(watch = false, minifyBrowserClien
     for (let clientName of clients) {
       console.log(chalk.yellow(`+ ${cmdString} browser client "${clientName}"`));
 
-      const jsInput = path.join(cwd, '.build', 'clients', clientName, 'index.js');
-      // const tsInput = path.join(cwd, '.build', 'clients', clientName, 'index.ts');
       const inputFile = path.join(cwd, '.build', 'clients', clientName, 'index.js');
-
-      // if (fs.existsSync(jsInput)) {
-      //   inputFile = jsInput;
-      // } else if (fs.existsSync(tsInput)) {
-      //   inputFile = tsInput;
-      // } else {
-      //   throw new Error(`[@soundworks/build] Invalid client entry point for "${clientName}", no "input.js" nor "input.ts" file found`);
-      // }
-
-      // console.log(inputFile);
-
       const outputFile = path.join(cwd, '.build', 'public', `${clientName}.js`);
+
       await bundle(inputFile, outputFile, watch);
 
       if (minifyBrowserClients) {

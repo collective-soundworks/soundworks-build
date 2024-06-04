@@ -2,10 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fork } from 'node:child_process';
 
+import loadConfig from '@soundworks/helpers/load-config.js';
 import chalk from 'chalk';
 import chokidar from 'chokidar';
 import debounce from 'lodash.debounce';
-import JSON5 from 'json5';
 import terminate from 'terminate';
 
 const processes = new Map();
@@ -80,19 +80,9 @@ export default function watchProcess(processName, inspect) {
       process.exit(0);
     }
 
-    let clientsConfig = null;
+    const config = loadConfig(process.env.ENV);
+    const clientsConfig = config.app.clients;
 
-    // move that to external file and watch it
-    try {
-      const configData = fs.readFileSync(path.join('config', 'application.json'));
-      const config = JSON5.parse(configData);
-      clientsConfig = config.clients
-    } catch(err) {
-      console.log(chalk.red(`[@soundworks/devtools]
-> Invalid \`config/application.json\` file`));
-      console.log(err);
-      process.exit(0);
-    }
     // check client is declared as a "node" type in `config/application.json`
     if (!clientsConfig[processName] || clientsConfig[processName].target !== 'node') {
       console.log(chalk.red(`[@soundworks/devtools]
