@@ -5,7 +5,7 @@
   ],
   "description": "developper tools for soundworks applications",
   "license": "BSD-3-Clause",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.5",
   "type": "module",
   "bin": {
     "soundworks-build": "./bin/soundworks-build.js"
