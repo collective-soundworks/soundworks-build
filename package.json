@@ -41,7 +41,7 @@
     "lodash.debounce": "^4.0.8",
     "rimraf": "^3.0.2",
     "source-map": "^0.7.4",
-    "terminate": "^2.5.0",
+    "terminate": "2.6.0",
     "webpack": "^5.74.0"
   },
   "devDependencies": {
