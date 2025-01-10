@@ -14,9 +14,9 @@ program
   .option('-i, --inspect', 'watch process with --inspect flag, use in conjunction with --watch-process flag')
   .option('-D, --delete-build', 'delete .build directory')
   // deprecated since 1.0.0-alpha.1 - 2024/05/16
-  .option('-d, --debug', '[deprecated] support legacy scripts')
-  .option('-m, --minify', '[deprecated] support legacy scripts')
-  .option('-C, --clear-cache', '[deprecated] support legacy scripts')
+  .option('-d, --debug', '[deprecated] keep flag for legacy scripts')
+  .option('-m, --minify', '[deprecated] keep flag for legacy scripts')
+  .option('-C, --clear-cache', '[deprecated] keep flag for legacy scripts')
 ;
 
 program.parse(process.argv);

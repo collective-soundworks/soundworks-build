@@ -1,14 +1,12 @@
 import path from 'node:path';
 import { EOL } from 'node:os';
-import { createRequire } from 'node:module';
+import fs from 'node:fs';
 
 import loadConfig from '@soundworks/helpers/load-config.js';
 import { AnsiUp } from 'ansi_up';
 import chalk from 'chalk';
 import chokidar from 'chokidar';
 import * as esbuild from 'esbuild';
-import fs from 'fs-extra';
-// import JSON5 from 'json5';
 import klawSync from 'klaw-sync';
 import swc from '@swc/core';
 
@@ -29,7 +27,7 @@ async function doCompileOrCopy(pathname, inputFolder, outputFolder) {
     .replace(inputFolder, outputFolder)
     .replace(supportedFilesRegExp, '.js');
 
-  fs.ensureDirSync(path.dirname(outputFilename));
+  fs.mkdirSync(path.dirname(outputFilename), { recursive: true });
 
   if (supportedFilesRegExp.test(inputFilename)) {
     try {
