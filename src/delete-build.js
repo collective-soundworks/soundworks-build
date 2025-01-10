@@ -1,8 +1,8 @@
+import fs from 'node:fs/promises';
 import chalk from 'chalk';
-import { rimraf } from 'rimraf';
 
 export default async function deleteBuild() {
-  await rimraf('.build');
+  await fs.rm('.build', { recursive: true, force: true });
   console.log(chalk.yellow(`+ deleted build folder`));
 }
 

@@ -38,8 +38,7 @@
     "esbuild": "^0.21.3",
     "fs-extra": "^11.2.0",
     "klaw-sync": "^6.0.0",
-    "portfinder": "^1.0.32",
-    "rimraf": "^5.0.7"
+    "portfinder": "^1.0.32"
   },
   "devDependencies": {
     "@ircam/sc-utils": "^1.9.0",
