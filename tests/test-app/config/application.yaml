@@ -6,3 +6,5 @@ clients:
   player:
     runtime: browser
     default: true
+  manual:
+    runtime: node

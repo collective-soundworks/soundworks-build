@@ -28,7 +28,7 @@ describe('# watch-process', () => {
   const utilsSrcFilename = path.join(appDirname, 'src', 'lib', 'utils.js');
   const utilsDistFilename = path.join(appDirname, '.build', 'lib', 'utils.js');
 
-  describe.skip('## source maps', () => {});
+  describe.skip('## check source maps', () => {});
 
   describe('## restart process', () => {
     beforeEach(() => {
@@ -70,6 +70,8 @@ describe('# watch-process', () => {
 
         console.log('change utils.js to:', operation);
         fs.writeFileSync(utilsSrcFilename, operation);
+        // link to 2s timestamp granularity on FAT drives?
+        // https://stackoverflow.com/questions/11546839/why-does-file-modified-time-automatically-increase-by-2-seconds-when-copied-to-u
         await delay(IS_RPI ? 2000 : 500);
       }
 
@@ -129,7 +131,9 @@ describe('# watch-process', () => {
         }
 
         console.log('rsync build file:', srcFilename, 'to .build');
-        execSync(`rsync ${srcFilename} ${utilsDistFilename}`);
+        execSync(`rsync --inplace ${srcFilename} ${utilsDistFilename}`);
+        // link to 2s timestamp granularity on FAT drives?
+        // https://stackoverflow.com/questions/11546839/why-does-file-modified-time-automatically-increase-by-2-seconds-when-copied-to-u
         await delay(IS_RPI ? 2000 : 500);
       }
 
