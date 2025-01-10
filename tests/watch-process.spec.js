@@ -10,15 +10,18 @@ import terminate from 'terminate/promise';
 const appDirname = path.join(process.cwd(), 'tests', 'test-app');
 
 const LONG_RUN = process.argv.includes('--long-run');
+const IS_RPI = process.argv.includes('--rpi');
 
 function launchProcess(cmd, cwd) {
   const words = cmd.split(' ');
-  const proc = spawn(words.shift(), words, { cwd, stdio: 'inherit' });
+  const proc = spawn(words.shift(), words, { cwd });
   proc.on('close', (code) => {
-    console.log(`child process exited with code ${code}`);
+    console.log(`child process "${cmd}" exited with code ${code}`);
   });
   return proc;
 }
+
+// @todo - clean test app, re-install, etc.
 
 describe('# watch-process', () => {
   const thingLogFile = path.join(process.cwd(), 'tests', 'log-thing.txt');
@@ -33,19 +36,19 @@ describe('# watch-process', () => {
       try {
         fs.unlinkSync(thingLogFile);
       } catch (err) {}
-      // clean src/lin/utils.js
+      // clean src/lib/utils.js
       fs.writeFileSync(utilsSrcFilename, `export const execute = (a, b) => a + b;`);
     });
 
-    it('should restart process when changes are triggered locally by `build-application`', async function() {
+    it.only('should restart process when changes are triggered locally by `build-application`', async function() {
       const numIterations = LONG_RUN ? 1000 : 5;
       this.timeout(5000 + numIterations * 1000);
 
-      const server = launchProcess(`npm run dev`, appDirname);
-      await delay(1000);
+      const server = launchProcess(`npm run watch:inspect server`, appDirname);
+      await delay(IS_RPI ? 5000 : 1000);
 
       const thing = launchProcess(`npm run watch thing`, appDirname);
-      await delay(500);
+      await delay(IS_RPI ? 2000 : 500);
 
       {
         const data = fs.readFileSync(thingLogFile).toString();
@@ -95,10 +98,10 @@ describe('# watch-process', () => {
       }
 
       const server = launchProcess(`npm run dev`, appDirname);
-      await delay(1000);
+      await delay(IS_RPI ? 5000 : 1000);
 
       const thing = launchProcess(`npm run watch thing`, appDirname);
-      await delay(500);
+      await delay(IS_RPI ? 2000 : 500);
 
       {
         const data = fs.readFileSync(thingLogFile).toString();
