@@ -14,7 +14,8 @@
     "access": "public"
   },
   "scripts": {
-    "test": "node tests/cli-tools-in-child-process/index.js"
+    "test": "mocha tests/*.spec.mjs",
+    "test:only": "mocha"
   },
   "repository": {
     "type": "git",
@@ -28,6 +29,7 @@
     "soundworks"
   ],
   "dependencies": {
+    "@soundworks/helpers": "^1.0.0-alpha.18",
     "@swc/core": "^1.5.7",
     "ansi_up": "^6.0.2",
     "chalk": "^5.1.2",
@@ -35,12 +37,15 @@
     "commander": "^12.0.0",
     "esbuild": "^0.21.3",
     "fs-extra": "^11.2.0",
-    "json5": "^2.2.1",
     "klaw-sync": "^6.0.0",
     "portfinder": "^1.0.32",
     "rimraf": "^5.0.7"
   },
   "devDependencies": {
-    "prompts": "^2.4.2"
+    "@ircam/sc-utils": "^1.9.0",
+    "chai": "^5.1.2",
+    "mocha": "^11.0.1",
+    "prompts": "^2.4.2",
+    "terminate": "^2.8.0"
   }
 }

@@ -2,12 +2,13 @@ import path from 'node:path';
 import { EOL } from 'node:os';
 import { createRequire } from 'node:module';
 
+import loadConfig from '@soundworks/helpers/load-config.js';
 import { AnsiUp } from 'ansi_up';
 import chalk from 'chalk';
 import chokidar from 'chokidar';
 import * as esbuild from 'esbuild';
 import fs from 'fs-extra';
-import JSON5 from 'json5';
+// import JSON5 from 'json5';
 import klawSync from 'klaw-sync';
 import swc from '@swc/core';
 
@@ -115,7 +116,7 @@ const esbuildSwcPlugin = {
   setup(build) {
     build.onLoad({ filter: /.*/ }, async args => {
       const inputFilename = args.path;
-      const contents = await fs.promises.readFile(inputFilename, 'utf8');
+      // const contents = await fs.promises.readFile(inputFilename, 'utf8');
 
       try {
         let { code } = await swc.transformFile(inputFilename, {
@@ -202,14 +203,8 @@ export default async function buildApplication(watch = false) {
 
   // 2. Build "browser" clients from `src` to `.build/public`
   // Get application config file get list of declared browser clients
-  let clientsConfig = null;
-  try {
-    const configData = fs.readFileSync(path.join(cwd, 'config', 'application.json'));
-    clientsConfig = JSON5.parse(configData).clients;
-  } catch(err) {
-    console.error(chalk.red(`[@soundworks/build] Invalid \`config/application.json\` file`));
-    process.exit(1);
-  }
+  const config = loadConfig(process.env.ENV);
+  const clientsConfig = config.app.clients;
 
   // Find valid "browsers" clients paths
   const clientsSrc = path.join('src', 'clients');
@@ -220,7 +215,7 @@ export default async function buildApplication(watch = false) {
       const isDir = fs.lstatSync(clientPath).isDirectory();
       return isDir;
     }).filter(dirname => {
-      return clientsConfig[dirname] && clientsConfig[dirname].target === 'browser';
+      return clientsConfig[dirname] && clientsConfig[dirname].runtime === 'browser';
     });
 
   // Bundle all valid declared client
