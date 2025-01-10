@@ -14,7 +14,7 @@ const IS_RPI = process.argv.includes('--rpi');
 
 function launchProcess(cmd, cwd) {
   const words = cmd.split(' ');
-  const proc = spawn(words.shift(), words, { cwd });
+  const proc = spawn(words.shift(), words, { cwd, stdio: 'inherit' });
   proc.on('close', (code) => {
     console.log(`child process "${cmd}" exited with code ${code}`);
   });
