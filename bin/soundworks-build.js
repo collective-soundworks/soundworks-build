@@ -12,7 +12,7 @@ program
   .option('-w, --watch', 'watch file system to rebuild application, use in conjunction with --build flag')
   .option('-p, --watch-process <name>', 'restart a node process when its sources')
   .option('-i, --inspect', 'watch process with --inspect flag, use in conjunction with --watch-process flag')
-  .option('-D, --delete-build', 'delete .build directory')
+  .option('-D, --delete-build', 'delete build directory')
   // deprecated since 1.0.0-alpha.1 - 2024/05/16
   .option('-d, --debug', '[deprecated] keep flag for legacy scripts')
   .option('-m, --minify', '[deprecated] keep flag for legacy scripts')

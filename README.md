@@ -3,7 +3,6 @@
 Build tools for [`soundworks`](https://soundworks.dev) applications.
 
 The build tools are mainly wrappers around:
-<!-- - [nodemon]() -->
 - [swc](https://swc.rs/)
 - [esbuild](https://esbuild.github.io/)
 
@@ -31,7 +30,7 @@ Options:
   -w, --watch                 watch file system to rebuild application, use in conjunction with --build flag
   -p, --watch-process <name>  restart a node process when its sources
   -i, --inspect               watch process with --inspect flag, use in conjunction with --watch-process flag
-  -D, --delete-build          delete .build directory
+  -D, --delete-build          delete build directory
   -h, --help                  display help for command
 ```
 

@@ -5,6 +5,8 @@ import { fork } from 'node:child_process';
 import loadConfig from '@soundworks/helpers/load-config.js';
 import chalk from 'chalk';
 import portfinder from 'portfinder';
+import chokidar from 'chokidar';
+import terminate from 'terminate/promise';
 
 import { runtimeOrTarget } from './utils.js';
 
@@ -76,5 +78,18 @@ export default async function watchProcess(processName, inspect) {
     options.execArgv.unshift(`--inspect=${port}`);
   }
 
-  fork(processPath, [], options);
+  let proc = null;
+
+  // restart watched process when a config file change
+  chokidar
+    .watch('config', { ignoreInitial: true })
+    .on('all', async () => {
+      if (proc) {
+        await terminate(proc.pid);
+      }
+
+      proc = fork(processPath, [], options);
+    });
+
+  proc = fork(processPath, [], options);
 }

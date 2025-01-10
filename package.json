@@ -37,13 +37,13 @@
     "commander": "^12.0.0",
     "esbuild": "^0.21.3",
     "klaw-sync": "^6.0.0",
-    "portfinder": "^1.0.32"
+    "portfinder": "^1.0.32",
+    "terminate": "^2.8.0"
   },
   "devDependencies": {
     "@ircam/sc-utils": "^1.9.0",
     "chai": "^5.1.2",
     "mocha": "^11.0.1",
-    "prompts": "^2.4.2",
-    "terminate": "^2.8.0"
+    "prompts": "^2.4.2"
   }
 }
