@@ -6,6 +6,8 @@ import loadConfig from '@soundworks/helpers/load-config.js';
 import chalk from 'chalk';
 import portfinder from 'portfinder';
 
+import { runtimeOrTarget } from './utils.js';
+
 export default async function watchProcess(processName, inspect) {
   let processPath = null;
 
@@ -34,8 +36,8 @@ export default async function watchProcess(processName, inspect) {
       process.exit(1);
     }
 
-    if (clientsConfig[processName].runtime !== 'node') {
-      console.log(chalk.red(`[@soundworks/build] Process \`${processName}\` not declared as a "node" runtime process in \`./config/application.yaml\``));
+    if (runtimeOrTarget(clientsConfig[processName]) !== 'node') {
+      console.log(chalk.red(`[@soundworks/build] Process \`${processName}\` not declared as a "node" runtime in \`./config/application.yaml\``));
       process.exit(1);
     }
 

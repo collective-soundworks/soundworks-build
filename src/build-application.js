@@ -10,6 +10,8 @@ import * as esbuild from 'esbuild';
 import klawSync from 'klaw-sync';
 import swc from '@swc/core';
 
+import { runtimeOrTarget } from './utils.js';
+
 const cwd = process.cwd();
 const cwdRegExp = new RegExp(cwd, 'g');
 const supportedFilesRegExp = /\.(js|jsx|mjs|ts|tsx)$/;
@@ -213,7 +215,7 @@ export default async function buildApplication(watch = false) {
       const isDir = fs.lstatSync(clientPath).isDirectory();
       return isDir;
     }).filter(dirname => {
-      return clientsConfig[dirname] && clientsConfig[dirname].runtime === 'browser';
+      return clientsConfig[dirname] && runtimeOrTarget(clientsConfig[dirname]) === 'browser';
     });
 
   // Bundle all valid declared client
