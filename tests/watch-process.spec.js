@@ -40,12 +40,12 @@ describe('# watch-process', () => {
       fs.writeFileSync(utilsSrcFilename, `export const execute = (a, b) => a + b;`);
     });
 
-    it.only('should restart process when changes are triggered locally by `build-application`', async function() {
+    it('should restart process when changes are triggered locally by `build-application`', async function() {
       const numIterations = LONG_RUN ? 1000 : 5;
       this.timeout(5000 + numIterations * 1000);
 
-      const server = launchProcess(`npm run watch:inspect server`, appDirname);
-      await delay(IS_RPI ? 5000 : 1000);
+      const server = launchProcess(`npm run dev`, appDirname);
+      await delay(IS_RPI ? 6000 : 1000);
 
       const thing = launchProcess(`npm run watch thing`, appDirname);
       await delay(IS_RPI ? 2000 : 500);
@@ -97,8 +97,10 @@ describe('# watch-process', () => {
         return;
       }
 
-      const server = launchProcess(`npm run dev`, appDirname);
-      await delay(IS_RPI ? 5000 : 1000);
+      execSync(`npm run build`, { cwd: appDirname });
+
+      const server = launchProcess(`npm run watch:inspect server`, appDirname);
+      await delay(IS_RPI ? 2000 : 1000);
 
       const thing = launchProcess(`npm run watch thing`, appDirname);
       await delay(IS_RPI ? 2000 : 500);
