@@ -14,7 +14,7 @@
     "access": "public"
   },
   "scripts": {
-    "test": "mocha tests/*.spec.mjs",
+    "test": "mocha tests/*.spec.js",
     "test:only": "mocha"
   },
   "repository": {
@@ -29,7 +29,6 @@
     "soundworks"
   ],
   "dependencies": {
-    "@soundworks/helpers": "^1.0.0-alpha.18",
     "@swc/core": "^1.5.7",
     "ansi_up": "^6.0.2",
     "chalk": "^5.1.2",
@@ -45,5 +44,8 @@
     "chai": "^5.1.2",
     "mocha": "^11.0.1",
     "prompts": "^2.4.2"
+  },
+  "peerDependencies": {
+    "@soundworks/helpers": "^1.0.0-alpha.18"
   }
 }

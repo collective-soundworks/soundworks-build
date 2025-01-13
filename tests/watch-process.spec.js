@@ -156,16 +156,16 @@ describe('# watch-process', () => {
   });
 
   describe('## check --enable-source-maps flag', () => {
-    it.only('should report errors from source files', async function() {
+    it('should report errors from source files', async function() {
       const numIterations = LONG_RUN ? 1000 : 5;
       this.timeout((IS_RPI ? 50000 : 5000) + numIterations * 1000);
-
-      const server = launchProcess(`npm run dev`, appDirname);
-      await delay(IS_RPI ? 10000 : 1000);
 
       const utilsThrows = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-throws.js');
       const code = fs.readFileSync(utilsThrows).toString();
       fs.writeFileSync(utilsSrcFilename, code);
+
+      const server = launchProcess(`npm run dev`, appDirname);
+      await delay(IS_RPI ? 10000 : 1000);
 
       const thing = spawn('npm', ['run', 'watch', 'thing'], { cwd: appDirname });
 
@@ -173,6 +173,7 @@ describe('# watch-process', () => {
       const expectedStackTrace = `src/lib/utils.js:2`;
 
       thing.stderr.on('data', data => {
+        // console.group(data);
         if (data.toString().includes(expectedStackTrace)) {
           console.log('### Expected stack trace found:');
           console.log(data.toString());
