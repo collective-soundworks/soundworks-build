@@ -6,6 +6,7 @@ import { EOL } from 'node:os';
 import { delay } from '@ircam/sc-utils';
 import { assert } from 'chai';
 import terminate from 'terminate/promise';
+import exp from 'node:constants';
 
 const appDirname = path.join(process.cwd(), 'tests', 'test-app');
 
@@ -21,25 +22,28 @@ function launchProcess(cmd, cwd) {
   return proc;
 }
 
-// @todo - clean test app, re-install, etc.
+const thingLogFile = path.join(process.cwd(), 'tests', 'log-thing.txt');
+const utilsSrcFilename = path.join(appDirname, 'src', 'lib', 'utils.js');
+const utilsDistFilename = path.join(appDirname, '.build', 'lib', 'utils.js');
+// fixture
+const utilsAdd = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-add.js');
+const utilsMult = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-mult.js');
+
+beforeEach(() => {
+  // clean log file
+  try {
+    fs.unlinkSync(thingLogFile);
+  } catch (err) {}
+});
+
+afterEach(() => {
+  // clean src/lib/utils.js to avoid constant git change
+  const code = fs.readFileSync(utilsAdd).toString();
+  fs.writeFileSync(utilsSrcFilename, code);
+});
 
 describe('# watch-process', () => {
-  const thingLogFile = path.join(process.cwd(), 'tests', 'log-thing.txt');
-  const utilsSrcFilename = path.join(appDirname, 'src', 'lib', 'utils.js');
-  const utilsDistFilename = path.join(appDirname, '.build', 'lib', 'utils.js');
-
-  describe.skip('## check source maps', () => {});
-
   describe('## restart process', () => {
-    beforeEach(() => {
-      // clean log file
-      try {
-        fs.unlinkSync(thingLogFile);
-      } catch (err) {}
-      // clean src/lib/utils.js
-      fs.writeFileSync(utilsSrcFilename, `export const execute = (a, b) => a + b;`);
-    });
-
     it('should restart process when changes are triggered locally by `build-application`', async function() {
       const numIterations = LONG_RUN ? 1000 : 5;
       this.timeout((IS_RPI ? 50000 : 5000) + numIterations * 1000);
@@ -57,14 +61,16 @@ describe('# watch-process', () => {
       }
 
       const expected = [5];
+      const utilsAddCode = fs.readFileSync(utilsAdd).toString();
+      const utilsMultCode = fs.readFileSync(utilsMult).toString();
 
       for (let i = 0; i < numIterations; i++) {
         let operation;
         if (i % 2 === 0) {
-          operation = `export const execute = (a, b) => a * b;`;
+          operation = utilsMultCode;
           expected.push(6);
         } else {
-          operation = `export const execute = (a, b) => a + b;`;
+          operation = utilsAddCode;
           expected.push(5);
         }
 
@@ -117,8 +123,6 @@ describe('# watch-process', () => {
       // - file is build by `dev` script
       // - `watch thing` process is restarted on build change
       const expected = [5];
-      const utilsAdd = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-add.js');
-      const utilsMult = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-mult.js');
 
       for (let i = 0; i < numIterations; i++) {
         let srcFilename;
@@ -148,6 +152,39 @@ describe('# watch-process', () => {
       await delay(IS_RPI ? 2000 : 500);
       await terminate(thing.pid);
       await terminate(server.pid);
+    });
+  });
+
+  describe('## check --enable-source-maps flag', () => {
+    it.only('should report errors from source files', async function() {
+      const numIterations = LONG_RUN ? 1000 : 5;
+      this.timeout((IS_RPI ? 50000 : 5000) + numIterations * 1000);
+
+      const server = launchProcess(`npm run dev`, appDirname);
+      await delay(IS_RPI ? 10000 : 1000);
+
+      const utilsThrows = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-throws.js');
+      const code = fs.readFileSync(utilsThrows).toString();
+      fs.writeFileSync(utilsSrcFilename, code);
+
+      const thing = spawn('npm', ['run', 'watch', 'thing'], { cwd: appDirname });
+
+      let stackTraceFound = false;
+      const expectedStackTrace = `src/lib/utils.js:2`;
+
+      thing.stderr.on('data', data => {
+        if (data.toString().includes(expectedStackTrace)) {
+          console.log('### Expected stack trace found:');
+          console.log(data.toString());
+          stackTraceFound = true;
+        }
+      });
+
+      await delay(IS_RPI ? 2000 : 500);
+      await terminate(thing.pid);
+      await terminate(server.pid);
+
+      assert.isTrue(stackTraceFound);
     });
   });
 });
