@@ -8,11 +8,13 @@ import portfinder from 'portfinder';
 import chokidar from 'chokidar';
 import terminate from 'terminate/promise';
 
-import { runtimeOrTarget } from './utils.js';
+import {
+  runtimeOrTarget,
+  locateProcessEntryPoint,
+  BUILD_DIR,
+} from './utils.js';
 
 export default async function watchProcess(processName, inspect) {
-  let processPath = null;
-
   // `--watch` flag has been declared stable in node v22.0.0
   // cf. https://nodejs.org/api/cli.html#--watch
   const [major, _minor, _patch] = process.versions.node.split('.').map(Number);
@@ -26,9 +28,7 @@ export default async function watchProcess(processName, inspect) {
     process.exit(1);
   }
 
-  if (processName === 'server') {
-    processPath = path.join('.build', processName, 'index.js');
-  } else {
+  if (processName !== 'server') {
     // Get application config file and make sure client is declared as a "node" target
     const config = loadConfig(process.env.ENV);
     const clientsConfig = config.app.clients;
@@ -42,17 +42,16 @@ export default async function watchProcess(processName, inspect) {
       console.log(chalk.red(`[@soundworks/build] Process \`${processName}\` not declared as a "node" runtime in \`./config/application.yaml\``));
       process.exit(1);
     }
-
-    processPath = path.join('.build', 'clients', processName, 'index.js');
   }
 
+  const processPath = locateProcessEntryPoint(processName, BUILD_DIR);
   console.log(chalk.cyan(`> watching process\t ${processPath}`));
 
   // [2025-01] Notes on the different relaunch solution we explored here:
   // - `chokidar` does not provide a way to restart the process when a dependency,
   // which is outside the watched directory is changed. Which is rather bad DX
   // - `nodemon` has the same problem, while it may look like the opposite in a simple
-  // testbad. It restarts the process even the changed does not concern it... probably
+  // testbed. It restarts the process even the changed does not concern it... probably
   // because it watches process.cwd() by default, so same behavior as with `chokidar`
   // but with larger "watch" scope
   // - `node --watch` looks like the most suited solution for our use-case:

@@ -41,7 +41,7 @@ afterEach(() => {
   fs.writeFileSync(utilsSrcFilename, code);
 });
 
-describe('# watch-process', () => {
+describe.only('# watch-process', () => {
   describe('## restart process', () => {
     it('should restart process when changes are triggered locally by `build-application`', async function() {
       const numIterations = LONG_RUN ? 20 : 5;
@@ -77,7 +77,7 @@ describe('# watch-process', () => {
         fs.writeFileSync(utilsSrcFilename, operation);
         // link to 2s timestamp granularity on FAT drives?
         // https://stackoverflow.com/questions/11546839/why-does-file-modified-time-automatically-increase-by-2-seconds-when-copied-to-u
-        await delay(CI ? 2000 : 500);
+        await delay(CI ? 2000 : 1000);
       }
 
       {

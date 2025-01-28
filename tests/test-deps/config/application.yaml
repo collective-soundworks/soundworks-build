@@ -1,0 +1,8 @@
+name: test-deps
+author: ""
+clients:
+  browser:
+    runtime: browser
+    default: true
+  node:
+    runtime: node

@@ -1,0 +1,28 @@
+import path from 'node:path';
+import fs from 'node:fs';
+import { execSync } from 'node:child_process';
+
+import { assert } from 'chai';
+
+const appDirname = path.join(process.cwd(), 'tests', 'test-deps');
+
+const CI = process.argv.includes('--ci');
+
+describe('Check all our usual deps are correctly building', () => {
+  it('should properly build test app', async function() {
+    this.timeout(CI ? 20000 : 5000);
+
+    const buildPath = path.join(appDirname, '.build');
+
+    fs.rmSync(buildPath, { recursive: true, force: true });
+    const result = execSync('npm run build', {
+      cwd: appDirname,
+    });
+
+    console.log(result.toString());
+    assert.isTrue(fs.existsSync(path.join(buildPath, 'server.js')));
+    assert.isTrue(fs.existsSync(path.join(buildPath, 'clients', 'browser.js')));
+    assert.isTrue(fs.existsSync(path.join(buildPath, 'clients', 'node.js')));
+    assert.isTrue(fs.existsSync(path.join(buildPath, 'public', 'browser.js')));
+  });
+})

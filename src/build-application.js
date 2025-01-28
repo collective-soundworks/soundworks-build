@@ -10,7 +10,12 @@ import * as esbuild from 'esbuild';
 import klawSync from 'klaw-sync';
 import swc from '@swc/core';
 
-import { runtimeOrTarget } from './utils.js';
+import {
+  runtimeOrTarget,
+  locateProcessEntryPoint,
+  SRC_DIR,
+  BUILD_DIR,
+} from './utils.js';
 
 const cwd = process.cwd();
 const cwdRegExp = new RegExp(cwd, 'g');
@@ -197,34 +202,26 @@ export default async function buildApplication(watch = false) {
   }
 
   // 1. Transpile `src` to `.build`
-  const compileMsg = `+ ${watch ? 'watching' : 'transpiling'} \`src\` to \`.build\``;
+  const compileMsg = `+ ${watch ? 'watching' : 'transpiling'} \`${SRC_DIR}\` to \`${BUILD_DIR}\``;
   console.log(chalk.yellow(compileMsg));
-  await compile('src', '.build', watch);
+  await compile(SRC_DIR, BUILD_DIR, watch);
 
   // 2. Build "browser" clients from `src` to `.build/public`
   // Get application config file get list of declared browser clients
   const config = loadConfig(process.env.ENV);
   const clientsConfig = config.app.clients;
 
-  // Find valid "browsers" clients paths
-  const clientsSrc = path.join('src', 'clients');
-  const filenames = fs.readdirSync(clientsSrc);
-  const clients = filenames
-    .filter(filename => {
-      const clientPath = path.join(clientsSrc, filename);
-      const isDir = fs.lstatSync(clientPath).isDirectory();
-      return isDir;
-    }).filter(dirname => {
-      return clientsConfig[dirname] && runtimeOrTarget(clientsConfig[dirname]) === 'browser';
-    });
-
   // Bundle all valid declared client
-  for (let clientName of clients) {
-    const bundleMsg = `+ ${watch ? 'watching' : 'bundling'} browser client "${clientName}"`;
+  for (let role in clientsConfig) {
+    if (runtimeOrTarget(clientsConfig[role]) !== 'browser') {
+      continue;
+    }
+
+    const bundleMsg = `+ ${watch ? 'watching' : 'bundling'} browser client "${role}"`;
     console.log(chalk.yellow(bundleMsg));
 
-    const inputFile = path.join(cwd, 'src', 'clients', clientName, 'index.js');
-    const outputFile = path.join(cwd, '.build', 'public', `${clientName}.js`);
+    const inputFile = path.join(cwd, locateProcessEntryPoint(role, SRC_DIR));
+    const outputFile = path.join(cwd, BUILD_DIR, 'public', `${role}.js`);
 
     bundle(inputFile, outputFile, watch);
   }
