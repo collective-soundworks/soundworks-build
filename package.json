@@ -29,7 +29,6 @@
     "soundworks"
   ],
   "dependencies": {
-    "@soundworks/plugin-scripting": "^2.0.0-alpha.5",
     "@swc/core": "^1.5.7",
     "ansi_up": "^6.0.2",
     "chalk": "^5.1.2",
@@ -47,6 +46,7 @@
     "prompts": "^2.4.2"
   },
   "peerDependencies": {
-    "@soundworks/helpers": "^1.0.0-alpha.18"
+    "@soundworks/core": "^5.0.0",
+    "@soundworks/helpers": "^5.0.0"
   }
 }
