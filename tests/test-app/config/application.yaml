@@ -7,4 +7,4 @@ clients:
     runtime: browser
     default: true
   manual:
-    target: node
+    runtime: node

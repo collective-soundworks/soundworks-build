@@ -39,4 +39,3 @@ configureHttpRouter(server);
 await server.start();
 
 // and do your own stuff!
-

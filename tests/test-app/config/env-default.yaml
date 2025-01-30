@@ -1,6 +1,6 @@
 type: development
 port: 8000
-subpath: ''
+baseUrl: ''
 serverAddress: ''
 useHttps: false
 httpsInfos:
