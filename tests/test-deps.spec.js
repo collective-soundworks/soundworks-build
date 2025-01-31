@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { execSync } from 'node:child_process';
 
 import { assert } from 'chai';
+import { delay } from '@ircam/sc-utils';
 
 const appDirname = path.join(process.cwd(), 'tests', 'test-deps');
 
@@ -10,7 +11,7 @@ const CI = process.argv.includes('--ci');
 
 describe('Check all our usual deps are correctly building', () => {
   before(async function() {
-    this.timeout(30000);
+    this.timeout(50000);
 
     if (!fs.existsSync(path.join(appDirname, 'node_modules'))) {
       console.log('install dependencies');
