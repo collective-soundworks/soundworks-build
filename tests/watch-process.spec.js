@@ -32,7 +32,7 @@ const utilsDistFilename = path.join(appDirname, '.build', 'lib', 'utils.js');
 const utilsAdd = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-add.js');
 const utilsMult = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-mult.js');
 
-describe.only('# watch-process', () => {
+describe('# watch-process', () => {
   before(async function() {
     this.timeout(30000);
 
