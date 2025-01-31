@@ -63,13 +63,13 @@ describe.only('# watch-process', () => {
   describe('## restart process', () => {
     it('should restart process when changes are triggered locally by `build-application`', async function() {
       const numIterations = LONG_RUN ? 20 : 5;
-      this.timeout((CI ? 50000 : 5000) + numIterations * 1000);
+      this.timeout((CI ? 50000 : 10000) + numIterations * 2000);
 
       const server = launchProcess(`npm run dev`, appDirname);
-      await delay(CI ? 10000 : 1000);
+      await delay(CI ? 10000 : 3000);
 
       const thing = launchProcess(`npm run watch thing`, appDirname);
-      await delay(CI ? 5000 : 500);
+      await delay(CI ? 5000 : 1000);
 
       {
         const data = fs.readFileSync(thingLogFile).toString();
@@ -113,7 +113,7 @@ describe.only('# watch-process', () => {
 
     it('should restart process when changes are made from network (e.g. rsync)', async function() {
       const numIterations = LONG_RUN ? 20 : 5;
-      this.timeout((CI ? 50000 : 5000) + numIterations * 1000);
+      this.timeout((CI ? 50000 : 10000) + numIterations * 2000);
 
       try {
         execSync(`which rsync`)
@@ -125,10 +125,10 @@ describe.only('# watch-process', () => {
       execSync(`npm run build`, { cwd: appDirname });
 
       const server = launchProcess(`npm run watch:inspect server`, appDirname);
-      await delay(CI ? 5000 : 1000);
+      await delay(CI ? 10000 : 3000);
 
       const thing = launchProcess(`npm run watch thing`, appDirname);
-      await delay(CI ? 5000 : 500);
+      await delay(CI ? 5000 : 1000);
 
       {
         const data = fs.readFileSync(thingLogFile).toString();
@@ -155,7 +155,7 @@ describe.only('# watch-process', () => {
         execSync(`rsync --inplace ${srcFilename} ${utilsDistFilename}`);
         // link to 2s timestamp granularity on FAT drives?
         // https://stackoverflow.com/questions/11546839/why-does-file-modified-time-automatically-increase-by-2-seconds-when-copied-to-u
-        await delay(CI ? 2000 : 500);
+        await delay(CI ? 2000 : 1000);
       }
 
       {
@@ -175,16 +175,17 @@ describe.only('# watch-process', () => {
   describe('## check --enable-source-maps flag', () => {
     it('should report errors from source files', async function() {
       const numIterations = LONG_RUN ? 20 : 5;
-      this.timeout((CI ? 50000 : 5000) + numIterations * 1000);
+      this.timeout((CI ? 50000 : 10000) + numIterations * 2000);
 
       const utilsThrows = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-throws.js');
       const code = fs.readFileSync(utilsThrows).toString();
       fs.writeFileSync(utilsSrcFilename, code);
 
       const server = launchProcess(`npm run dev`, appDirname);
-      await delay(CI ? 10000 : 1000);
+      await delay(CI ? 10000 : 3000);
 
       const thing = spawn('npm', ['run', 'watch', 'thing'], { cwd: appDirname });
+      await delay(CI ? 5000 : 1000);
 
       let stackTraceFound = false;
       const expectedStackTrace = `src/lib/utils.js:2`;

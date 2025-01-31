@@ -2,7 +2,6 @@ import '@soundworks/helpers/polyfills.js';
 import { Client } from '@soundworks/core/client.js';
 import { loadConfig, launcher } from '@soundworks/helpers/node.js';
 
-import { AudioContext } from 'node-web-audio-api';
 import { execute } from '../../lib/utils.js';
 
 // - General documentation: https://soundworks.dev/
@@ -17,18 +16,7 @@ async function bootstrap() {
 
   await client.start();
 
-  const audioContext = new AudioContext();
-
-  // console.log(audioContext);
-  // const src = audioContext.createOscillator();
-  // src.connect(audioContext.destination);
-  // src.frequency.value = 200;
-  // src.start();
-
   console.log(execute(3, 4));
-
-  // throw new Error('test line 30');
-
   console.log(`Hello ${client.config.app.name}!`);
 }
 

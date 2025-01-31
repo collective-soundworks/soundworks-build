@@ -17,17 +17,16 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@ircam/sc-components": "^3.0.0-alpha.60",
-    "@soundworks/core": "^4.0.0-alpha.21",
-    "@soundworks/helpers": "^1.0.0-alpha.12",
+    "@ircam/sc-components": "latest",
+    "@soundworks/core": "latest",
+    "@soundworks/helpers": "latest",
     "json5": "^2.2.3",
-    "lit": "^3.1.3",
-    "node-web-audio-api": "^1.0.0-beta.0"
+    "lit": "^3.1.3"
   },
   "devDependencies": {
     "@ircam/eslint-config": "^1.2.1",
-    "@soundworks/build": "^1.0.0-alpha.1",
-    "@soundworks/create": "^1.0.0-alpha.23",
+    "@soundworks/build": "latest",
+    "@soundworks/create": "latest",
     "concurrently": "^8.2.2",
     "eslint": "^9.17.0",
     "sass": "^1.77.1"
