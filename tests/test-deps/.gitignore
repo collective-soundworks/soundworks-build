@@ -5,6 +5,7 @@
 
 # ignore all environment config files
 /config/env-*
+!/config/env-default.yaml
 
 # junk files
 package-lock.json
