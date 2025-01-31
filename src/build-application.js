@@ -65,7 +65,7 @@ async function doCompileOrCopy(pathname, inputFolder, outputFolder) {
     try {
       fs.copyFileSync(inputFilename, outputFilename);
       console.log(chalk.green(`> copied\t ${inputFilename}`));
-    } catch(err) {
+    } catch (err) {
       console.error(err.message);
     }
   }
@@ -121,17 +121,11 @@ const esbuildSwcPlugin = {
   setup(build) {
     build.onLoad({ filter: /.*/ }, async args => {
       const inputFilename = args.path;
-      // const contents = await fs.promises.readFile(inputFilename, 'utf8');
+      const { code } = await swc.transformFile(inputFilename, {
+        sourceMaps: 'inline',
+      });
 
-      try {
-        let { code } = await swc.transformFile(inputFilename, {
-          sourceMaps: 'inline',
-        });
-
-        return { contents: code };
-      } catch (err) {
-        throw err;
-      }
+      return { contents: code };
     });
 
     build.onEnd(result => {
@@ -147,7 +141,7 @@ const esbuildSwcPlugin = {
         }
       }
     });
-  }
+  },
 };
 
 async function bundle(inputFile, outputFile, watch) {
@@ -166,7 +160,8 @@ async function bundle(inputFile, outputFile, watch) {
   if (!watch) {
     try {
       await esbuild.build(options);
-    } catch(err) {
+    // eslint-disable-next-line no-unused-vars
+    } catch (err) {
       // just swallow errors as we don't want the process
       // to return on first bundle pass
     }
@@ -227,7 +222,7 @@ export default async function buildApplication(watch = false) {
   }
 
   process.on('SIGINT', function() {
-    console.log(chalk.cyan('\n>>> EXIT'))
+    console.log(chalk.cyan('\n>>> EXIT'));
     process.exit(0);
   });
 }

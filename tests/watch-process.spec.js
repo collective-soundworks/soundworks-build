@@ -41,7 +41,7 @@ afterEach(() => {
   fs.writeFileSync(utilsSrcFilename, code);
 });
 
-describe.only('# watch-process', () => {
+describe('# watch-process', () => {
   describe('## restart process', () => {
     it('should restart process when changes are triggered locally by `build-application`', async function() {
       const numIterations = LONG_RUN ? 20 : 5;
