@@ -9,6 +9,14 @@ const appDirname = path.join(process.cwd(), 'tests', 'test-deps');
 const CI = process.argv.includes('--ci');
 
 describe('Check all our usual deps are correctly building', () => {
+  before(async () => {
+    if (!fs.existsSync(path.join(appDirname, 'node_modules'))) {
+      console.log('install dependencies');
+      execSync('npm install', { cwd: appDirname, stdio: 'inherit' });
+      await delay(1000);
+    }
+  });
+
   it('should properly build test app', async function() {
     this.timeout(CI ? 20000 : 5000);
 

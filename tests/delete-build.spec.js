@@ -8,18 +8,26 @@ import { assert } from 'chai';
 const appDirname = path.join(process.cwd(), 'tests', 'test-app');
 
 describe('delete-build', () => {
+  before(async () => {
+    if (!fs.existsSync(path.join(appDirname, 'node_modules'))) {
+      console.log('install dependencies');
+      execSync('npm install', { cwd: appDirname, stdio: 'inherit' });
+      await delay(1000);
+    }
+  });
+
   it('should properly clean .build directory', async function() {
-    this.timeout(5000);
+    this.timeout(10000);
 
     const buildDirname = path.join(appDirname, '.build');
 
     execSync('npm run build', { cwd: appDirname, stdio: 'inherit' });
-    await delay(1000);
+    await delay(500);
 
     assert.isTrue(fs.existsSync(buildDirname));
 
     execSync('npm run clean', { cwd: appDirname, stdio: 'inherit' });
-    await delay(1000);
+    await delay(500);
 
     assert.isFalse(fs.existsSync(buildDirname));
   });

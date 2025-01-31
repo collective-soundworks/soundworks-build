@@ -10,7 +10,7 @@ The build tools are mainly wrappers around:
 
 Note that the `@soundworks/build` package is automatically installed when creating an application using the `@soundworks/create` wizard and heavily rely on the file structure defined in the generated template, so most of the time you should not install this package manually.
 
-See [https://soundworks.dev/guides/getting-started.html](https://soundworks.dev/guides/getting-started.html) for more informations on the `soundworks` wizard.
+See [https://soundworks.dev/guides/getting-started.html](https://soundworks.dev/guides/getting-started.html) for more information on the `soundworks` wizard.
 
 ```
 npm install --save @soundworks/build

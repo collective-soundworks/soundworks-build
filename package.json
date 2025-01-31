@@ -3,7 +3,7 @@
   "authors": [
     "Benjamin Matuszewski"
   ],
-  "description": "developper tools for soundworks applications",
+  "description": "Build tools for soundworks applications",
   "license": "BSD-3-Clause",
   "version": "5.0.0",
   "type": "module",
@@ -16,7 +16,9 @@
   "scripts": {
     "lint": "npx eslint src",
     "test": "mocha tests/*.spec.js",
-    "test:only": "mocha"
+    "test:ci": "mocha tests/*.spec.js -- --ci",
+    "test:only": "mocha",
+    "preversion": "npm run lint"
   },
   "repository": {
     "type": "git",

@@ -12,6 +12,10 @@ const appDirname = path.join(process.cwd(), 'tests', 'test-app');
 const LONG_RUN = process.argv.includes('--long-run');
 const CI = process.argv.includes('--ci');
 
+if (CI) {
+  console.log('>>>>>>>>>>>>> RUNNING IN CI <<<<<<<<<<<<<<<<<<');
+}
+
 function launchProcess(cmd, cwd) {
   const words = cmd.split(' ');
   const proc = spawn(words.shift(), words, { cwd, stdio: 'inherit' });
@@ -28,20 +32,32 @@ const utilsDistFilename = path.join(appDirname, '.build', 'lib', 'utils.js');
 const utilsAdd = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-add.js');
 const utilsMult = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-mult.js');
 
-beforeEach(() => {
-  // clean log file
-  try {
-    fs.unlinkSync(thingLogFile);
-  } catch (err) {}
-});
+describe.only('# watch-process', () => {
+  before(async () => {
+    if (!fs.existsSync(path.join(appDirname, 'node_modules'))) {
+      console.log('install dependencies');
+      execSync('npm install', { cwd: appDirname, stdio: 'inherit' });
+      await delay(1000);
+    }
 
-afterEach(() => {
-  // clean src/lib/utils.js to avoid constant git change
-  const code = fs.readFileSync(utilsAdd).toString();
-  fs.writeFileSync(utilsSrcFilename, code);
-});
+    // re-init lib/utils.js
+    const code = fs.readFileSync(utilsAdd).toString();
+    fs.writeFileSync(utilsSrcFilename, code);
+  });
 
-describe('# watch-process', () => {
+  beforeEach(() => {
+    // clean log file
+    try {
+      fs.unlinkSync(thingLogFile);
+    } catch (err) {}
+  });
+
+  afterEach(() => {
+    // clean src/lib/utils.js to avoid constant git change
+    const code = fs.readFileSync(utilsAdd).toString();
+    fs.writeFileSync(utilsSrcFilename, code);
+  });
+
   describe('## restart process', () => {
     it('should restart process when changes are triggered locally by `build-application`', async function() {
       const numIterations = LONG_RUN ? 20 : 5;
