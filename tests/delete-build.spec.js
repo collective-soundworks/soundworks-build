@@ -8,7 +8,9 @@ import { assert } from 'chai';
 const appDirname = path.join(process.cwd(), 'tests', 'test-app');
 
 describe('delete-build', () => {
-  before(async () => {
+  before(async function() {
+    this.timeout(30000);
+
     if (!fs.existsSync(path.join(appDirname, 'node_modules'))) {
       console.log('install dependencies');
       execSync('npm install', { cwd: appDirname, stdio: 'inherit' });

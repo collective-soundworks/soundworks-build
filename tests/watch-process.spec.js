@@ -33,7 +33,9 @@ const utilsAdd = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-a
 const utilsMult = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-mult.js');
 
 describe.only('# watch-process', () => {
-  before(async () => {
+  before(async function() {
+    this.timeout(30000);
+
     if (!fs.existsSync(path.join(appDirname, 'node_modules'))) {
       console.log('install dependencies');
       execSync('npm install', { cwd: appDirname, stdio: 'inherit' });

@@ -9,7 +9,9 @@ const appDirname = path.join(process.cwd(), 'tests', 'test-deps');
 const CI = process.argv.includes('--ci');
 
 describe('Check all our usual deps are correctly building', () => {
-  before(async () => {
+  before(async function() {
+    this.timeout(30000);
+
     if (!fs.existsSync(path.join(appDirname, 'node_modules'))) {
       console.log('install dependencies');
       execSync('npm install', { cwd: appDirname, stdio: 'inherit' });
