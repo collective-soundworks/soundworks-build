@@ -2,6 +2,7 @@ import path from 'node:path';
 import { EOL } from 'node:os';
 import fs from 'node:fs';
 
+import { isFunction, isPlainObject } from '@ircam/sc-utils';
 import loadConfig from '@soundworks/helpers/load-config.js';
 import { AnsiUp } from 'ansi_up';
 import chalk from 'chalk';
@@ -86,7 +87,9 @@ async function compile(inputFolder, outputFolder, watch) {
     watcher.on('unlink', pathname => {
       const outputFilename = pathname.replace(inputFolder, outputFolder);
       fs.unlinkSync(outputFilename);
-      fs.unlinkSync(`${outputFilename}.map`);
+      if (fs.existsSync(`${outputFilename}.map`)) {
+        fs.unlinkSync(`${outputFilename}.map`);
+      }
 
       console.log(chalk.green(`> deleted\t ${outputFilename}`));
     });
@@ -144,8 +147,25 @@ const esbuildSwcPlugin = {
   },
 };
 
+// check for per project build configuration options
+const overrideConfigPathname = path.join(cwd, 'esbuild.config.js');
+let overrideConfigFunction = null;
+
+if (fs.existsSync(overrideConfigPathname)) {
+  const mod = await import(overrideConfigPathname);
+  overrideConfigFunction = mod.default;
+
+  if (!isFunction(overrideConfigFunction)) {
+    throw new Error('Invalid "build.config.js" file: default export must be a function');
+  }
+
+  if (!isPlainObject(overrideConfigFunction({}))) {
+    throw new Error('Invalid "build.config.js" file: default export must return an object');
+  }
+}
+
 async function bundle(inputFile, outputFile, watch) {
-  const options = {
+  let options = {
     entryPoints: [inputFile],
     outfile: outputFile,
     bundle: true,
@@ -156,6 +176,10 @@ async function bundle(inputFile, outputFile, watch) {
     metafile: true,
     plugins: [esbuildSwcPlugin],
   };
+
+  if (overrideConfigFunction !== null) {
+    options = overrideConfigFunction(options);
+  }
 
   if (!watch) {
     try {
