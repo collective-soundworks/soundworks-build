@@ -132,7 +132,7 @@ const esbuildSwcPlugin = {
     });
 
     build.onEnd(result => {
-      const outputFile = path.relative(cwd, build.initialOptions.outfile);
+      const outputFile = globalThis.outputFile;
 
       if (result.errors.length > 0) {
         // write first error in outputFile to have feedback on client side
@@ -165,9 +165,19 @@ if (fs.existsSync(overrideConfigPathname)) {
 }
 
 async function bundle(inputFile, outputFile, watch) {
+  // Use wildcard pattern to support dynamic import
+  const dirname  = path.dirname(inputFile);
+  const extension = path.extname(inputFile);
+  const wildcard = path.join(dirname, `*${extension}`);
+  const outputDir = path.dirname(outputFile);
+  // Store output pathname globally so that it can be used by swc plugin
+  // @note - would be nice to pass this through esbuild options, but
+  // `pluginData` does not work...
+  globalThis.outputFile = outputFile;
+
   let options = {
-    entryPoints: [inputFile],
-    outfile: outputFile,
+    entryPoints: [wildcard],
+    outdir: outputDir,
     bundle: true,
     format: 'esm',
     minify: true,
@@ -184,6 +194,7 @@ async function bundle(inputFile, outputFile, watch) {
   if (!watch) {
     try {
       await esbuild.build(options);
+      globalThis.outputFile = null;
     // eslint-disable-next-line no-unused-vars
     } catch (err) {
       // just swallow errors as we don't want the process
