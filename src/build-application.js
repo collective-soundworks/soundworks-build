@@ -172,10 +172,10 @@ async function bundle(inputFile, outputFile, watch) {
   // support for old file layout - no dynamic import
 
   // Use wildcard pattern to support dynamic import
-  const dirname  = path.dirname(inputFile);
-  const extension = path.extname(inputFile);
-  const wildcard = path.join(dirname, `*${extension}`);
-  const outputDir = path.dirname(outputFile);
+  // const dirname  = path.dirname(inputFile);
+  // const extension = path.extname(inputFile);
+  // const wildcard = path.join(dirname, `*${extension}`);
+  // const outputDir = path.dirname(outputFile);
   // Store output pathname globally so that it can be used by swc plugin
   // @note - would be nice to pass this through esbuild options, but
   // `pluginData` does not work...
