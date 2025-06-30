@@ -18,6 +18,12 @@ describe('delete-build', () => {
     }
   });
 
+  it(`Should test against local copy of @soundworks/build`, () => {
+    const buildDirname = path.join(appDirname, 'node_modules', '@soundworks', 'build');
+    const stats = fs.lstatSync(buildDirname);
+    assert.isTrue(stats.isSymbolicLink(), '@soundworks/build is not local copy');
+  });
+
   it('should properly clean .build directory', async function() {
     this.timeout(10000);
 

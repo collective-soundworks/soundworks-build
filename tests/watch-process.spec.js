@@ -61,6 +61,12 @@ describe('# watch-process', () => {
   });
 
   describe('## restart process', () => {
+    it(`Should test against local copy of @soundworks/build`, () => {
+      const buildDirname = path.join(appDirname, 'node_modules', '@soundworks', 'build');
+      const stats = fs.lstatSync(buildDirname);
+      assert.isTrue(stats.isSymbolicLink(), '@soundworks/build is not local copy');
+    });
+
     it('should restart process when changes are triggered locally by `build-application`', async function() {
       const numIterations = LONG_RUN ? 20 : 5;
       this.timeout((CI ? 50000 : 10000) + numIterations * 2000);
@@ -173,6 +179,12 @@ describe('# watch-process', () => {
   });
 
   describe('## check --enable-source-maps flag', () => {
+    it(`Should test against local copy of @soundworks/build`, () => {
+      const buildDirname = path.join(appDirname, 'node_modules', '@soundworks', 'build');
+      const stats = fs.lstatSync(buildDirname);
+      assert.isTrue(stats.isSymbolicLink(), '@soundworks/build is not local copy');
+    });
+
     it('should report errors from source files', async function() {
       const numIterations = LONG_RUN ? 20 : 5;
       this.timeout((CI ? 50000 : 10000) + numIterations * 2000);

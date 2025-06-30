@@ -18,6 +18,10 @@ import {
   BUILD_DIR,
 } from './utils.js';
 
+console.log('----------------------------------------------');
+console.log('NEW BUILD');
+console.log('----------------------------------------------');
+
 const cwd = process.cwd();
 const cwdRegExp = new RegExp(cwd, 'g');
 const supportedFilesRegExp = /\.(js|jsx|mjs|ts|tsx)$/;
@@ -165,6 +169,8 @@ if (fs.existsSync(overrideConfigPathname)) {
 }
 
 async function bundle(inputFile, outputFile, watch) {
+  // support for old file layout - no dynamic import
+
   // Use wildcard pattern to support dynamic import
   const dirname  = path.dirname(inputFile);
   const extension = path.extname(inputFile);
@@ -176,8 +182,9 @@ async function bundle(inputFile, outputFile, watch) {
   globalThis.outputFile = outputFile;
 
   let options = {
-    entryPoints: [wildcard],
-    outdir: outputDir,
+    entryPoints: [inputFile],
+    outfile: outputFile,
+    // outfile
     bundle: true,
     format: 'esm',
     minify: true,

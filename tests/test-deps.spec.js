@@ -20,6 +20,12 @@ describe('Check all our usual deps are correctly building', () => {
     }
   });
 
+  it(`Should test against local copy of @soundworks/build`, () => {
+    const buildDirname = path.join(appDirname, 'node_modules', '@soundworks', 'build');
+    const stats = fs.lstatSync(buildDirname);
+    assert.isTrue(stats.isSymbolicLink(), '@soundworks/build is not local copy');
+  });
+
   it('should properly build test app', async function() {
     this.timeout(CI ? 20000 : 5000);
 
