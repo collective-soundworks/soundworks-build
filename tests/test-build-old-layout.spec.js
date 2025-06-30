@@ -60,10 +60,12 @@ describe('# Build applications using old layout', () => {
 
     return new Promise(async resolve => {
       // prepare puppeteer
-      const browser = await puppeteer.launch();
+      const browser = await puppeteer.launch({
+        headless: true,
+        ignoreDefaultArgs: ["--disable-extensions"],
+        args: ["--no-sandbox", '--use-fake-ui-for-media-stream'],
+      });
       const page = await browser.newPage();
-      // run the server
-      // const controller = new AbortController();
 
       const serverFilename = path.join(destDirname, 'server', 'index.js');
       const serverProc = fork(serverFilename, [], {

@@ -61,7 +61,7 @@ describe('# Build applications using new layout', () => {
     assert.isTrue(fs.existsSync(browserBundlePathname), `File "${path.relative(appDirname, browserBundlePathname)}" not found`);
   });
 
-  it.only(`Browser clients should launch properly`, function() {
+  it(`Browser clients should launch properly`, function() {
     const timeoutDuration = CI ? 30 * 1000 : 10 * 1000;
     console.log('timeoutDuration:', timeoutDuration);
     this.timeout(timeoutDuration);
@@ -74,12 +74,9 @@ describe('# Build applications using new layout', () => {
         args: ["--no-sandbox", '--use-fake-ui-for-media-stream'],
       });
       const page = await browser.newPage();
-      // run the server
-      // const controller = new AbortController();
 
       const serverFilename = path.join(destDirname, 'server.js');
       const serverProc = fork(serverFilename, [], {
-        // signal: controller.signal,
         cwd: appDirname,
         stdio: 'inherit',
       });
