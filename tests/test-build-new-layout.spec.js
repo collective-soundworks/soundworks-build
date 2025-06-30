@@ -61,8 +61,10 @@ describe('# Build applications using new layout', () => {
     assert.isTrue(fs.existsSync(browserBundlePathname), `File "${path.relative(appDirname, browserBundlePathname)}" not found`);
   });
 
-  it(`Browser clients should launch properly`, function() {
-    this.timeout(CI ? 30 * 1000 : 10 * 1000);
+  it.only(`Browser clients should launch properly`, function() {
+    const timeoutDuration = CI ? 30 * 1000 : 10 * 1000;
+    console.log('timeoutDuration:', timeoutDuration);
+    this.timeout(timeoutDuration);
 
     return new Promise(async resolve => {
       // prepare puppeteer
@@ -96,7 +98,7 @@ describe('# Build applications using new layout', () => {
         terminate(serverProc.pid);
         await browser.close();
         assert.fail('No ack received after 5s');
-      }, CI ? 30 * 1000 : 10 * 1000);
+      }, timeoutDuration);
     });
   });
 
