@@ -18,10 +18,6 @@ import {
   BUILD_DIR,
 } from './utils.js';
 
-console.log('----------------------------------------------');
-console.log('NEW BUILD');
-console.log('----------------------------------------------');
-
 const cwd = process.cwd();
 const cwdRegExp = new RegExp(cwd, 'g');
 const supportedFilesRegExp = /\.(js|jsx|mjs|ts|tsx)$/;

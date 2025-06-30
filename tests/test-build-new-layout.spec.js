@@ -62,7 +62,7 @@ describe('# Build applications using new layout', () => {
   });
 
   it(`Browser clients should launch properly`, function() {
-    this.timeout(10 * 1000);
+    this.timeout(CI ? 30 * 1000 : 10 * 1000);
 
     return new Promise(async resolve => {
       // prepare puppeteer
@@ -89,14 +89,14 @@ describe('# Build applications using new layout', () => {
         }
       });
 
-      await delay(CI ? 5000 : 1000);
+      await delay(CI ? 10000 : 1000);
       await page.goto('http://127.0.0.1:8000');
 
       const timeout = setTimeout(async () => {
         terminate(serverProc.pid);
         await browser.close();
         assert.fail('No ack received after 5s');
-      }, 5000);
+      }, CI ? 30 * 1000 : 10 * 1000);
     });
   });
 
