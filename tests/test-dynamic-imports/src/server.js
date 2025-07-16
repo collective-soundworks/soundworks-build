@@ -22,13 +22,13 @@ const server = new Server(config);
 configureHttpRouter(server);
 
 server.stateManager.defineClass('test', {
-  browserAck: {
-    type: 'boolean',
-    default: false,
+  browserResult: {
+    type: 'integer',
+    default: 0,
   },
-  nodeAck: {
-    type: 'boolean',
-    default: false,
+  nodeResult: {
+    type: 'integer',
+    default: 0,
   },
 });
 
@@ -36,12 +36,24 @@ await server.start();
 
 const test = await server.stateManager.create('test');
 test.onUpdate(updates => {
-  if (updates.browserAck === true) {
-    console.log('> Browser ack received');
-    process.send('browser ack received');
+  if ('browserResult' in updates) {
+    if (updates.browserResult === 6) {
+      console.log('> browser result is valid');
+      process.send('browser result is valid');
+    } else {
+      console.log('> browser result is invalid');
+      process.send('browser result is invalid');
+    }
   }
-  if (updates.nodeAck === true) {
-    console.log('> Node ack received');
-    process.send('node ack received');
+
+  if ('nodeResult' in updates) {
+    if (updates.nodeResult === 6) {
+      console.log('> node result is valid');
+      process.send('node result is valid');
+    } else {
+      console.log('> node result is invalid');
+      process.send('node result is invalid');
+    }
   }
 });
+

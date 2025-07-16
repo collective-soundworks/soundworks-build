@@ -15,6 +15,7 @@ console.log(`
 --------------------------------------------------------
 `);
 
+config.env.verbose = false;
 const server = new Server(config);
 configureHttpRouter(server);
 

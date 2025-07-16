@@ -34,6 +34,14 @@ Options:
   -h, --help                  display help for command
 ```
 
+## Notes
+
+### Extending configuration
+
+### Dynamic imports
+
+### Typescript support
+
 ## License
 
 [BSD-3-Clause](./LICENSE)

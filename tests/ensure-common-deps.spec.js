@@ -9,7 +9,7 @@ const appDirname = path.join(process.cwd(), 'tests', 'test-deps');
 
 const CI = process.argv.includes('--ci');
 
-describe('Check all our usual deps are correctly building', () => {
+describe('# Ensure common deps build', () => {
   before(async function() {
     this.timeout(50000);
 
@@ -20,7 +20,15 @@ describe('Check all our usual deps are correctly building', () => {
     }
   });
 
-  it(`Should test against local copy of @soundworks/build`, () => {
+  after(function() {
+    this.timeout(10000);
+    fs.rmSync(path.join(appDirname, 'node_modules'), {
+      recursive: true,
+      force: true,
+    });
+  });
+
+  it(`should test against local copy of @soundworks/build`, () => {
     const buildDirname = path.join(appDirname, 'node_modules', '@soundworks', 'build');
     const stats = fs.lstatSync(buildDirname);
     assert.isTrue(stats.isSymbolicLink(), '@soundworks/build is not local copy');
@@ -30,8 +38,8 @@ describe('Check all our usual deps are correctly building', () => {
     this.timeout(CI ? 20000 : 5000);
 
     const buildPath = path.join(appDirname, '.build');
-
     fs.rmSync(buildPath, { recursive: true, force: true });
+
     const result = execSync('npm run build', {
       cwd: appDirname,
     });

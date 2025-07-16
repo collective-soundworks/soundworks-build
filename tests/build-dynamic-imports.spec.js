@@ -14,16 +14,12 @@ if (CI) {
   console.log('>>>>>>>>>>>>> RUNNING IN CI <<<<<<<<<<<<<<<<<<');
 }
 
-// ------------------------------------------------------------------------
-// use mobilizing template application
-// ------------------------------------------------------------------------
-
-describe('# Build applications using new layout w/ dynamic imports', () => {
-  const appDirname = path.join(process.cwd(), 'tests', 'test-new-layout-dynamic-imports');
+describe('# Build dynamic imports', () => {
+  const appDirname = path.join(process.cwd(), 'tests', 'test-dynamic-imports');
   const srcDirname = path.join(appDirname, 'src');
   const destDirname = path.join(appDirname, '.build');
-  const browserClient = 'mobile';
-  // const nodeClient = 'thing';
+  const browserClient = 'player';
+  const nodeClient = 'thing';
 
   before(async function() {
     this.timeout(30000);
@@ -41,13 +37,25 @@ describe('# Build applications using new layout w/ dynamic imports', () => {
     await delay(500);
   });
 
-  it(`Should test against local copy of @soundworks/build`, () => {
+  after(function() {
+    this.timeout(10000);
+    fs.rmSync(path.join(appDirname, 'node_modules'), {
+      recursive: true,
+      force: true,
+    });
+  });
+
+  let proc = null;
+  beforeEach(() => proc = new Set());
+  afterEach(() => proc.forEach(p => terminate(p.pid)));
+
+  it(`should test against local copy of @soundworks/build`, () => {
     const buildDirname = path.join(appDirname, 'node_modules', '@soundworks', 'build');
     const stats = fs.lstatSync(buildDirname);
     assert.isTrue(stats.isSymbolicLink(), '@soundworks/build is not local copy');
   });
 
-  it('Should transpile  or copy all files in `src`', async function() {
+  it('should transpile  or copy all files in `src`', async function() {
     this.timeout(10000);
 
     assert.isTrue(fs.existsSync(destDirname));
@@ -60,13 +68,14 @@ describe('# Build applications using new layout w/ dynamic imports', () => {
     });
   });
 
-  it('Should properly bundle browser client files: `src/clients/${name}.js` -> `.build/public/${name}.js`', () => {
+  it('should properly bundle browser client files: `src/clients/${name}.js` -> `.build/public/${name}.js`', () => {
     const browserBundlePathname = path.join(destDirname, 'public', `${browserClient}.js`);
     assert.isTrue(fs.existsSync(browserBundlePathname), `File "${path.relative(appDirname, browserBundlePathname)}" not found`);
   });
 
-  it(`Browser clients should launch properly`, function() {
-    this.timeout(CI ? 30 * 1000 : 10 * 1000);
+  it(`browser clients should launch properly`, function() {
+    const timeoutDuration = CI ? 30 * 1000 : 10 * 1000;
+    this.timeout(timeoutDuration);
 
     return new Promise(async resolve => {
       // prepare puppeteer
@@ -82,13 +91,13 @@ describe('# Build applications using new layout w/ dynamic imports', () => {
         cwd: appDirname,
         stdio: 'inherit',
       });
+      proc.add(serverProc);
 
       serverProc.on('message', async msg => {
         console.log('> In test:', msg);
 
-        if (msg === 'browser ack received') {
+        if (msg === 'browser result is valid') {
           clearTimeout(timeout);
-          terminate(serverProc.pid);
           await browser.close();
           resolve();
         }
@@ -98,47 +107,48 @@ describe('# Build applications using new layout w/ dynamic imports', () => {
       await page.goto('http://127.0.0.1:8000');
 
       const timeout = setTimeout(async () => {
-        terminate(serverProc.pid);
         await browser.close();
-        assert.fail('No ack received after 5s');
-      }, CI ? 30 * 1000 : 10 * 1000);
+        assert.fail('No valid result after', timeoutDuration, 's');
+      }, timeoutDuration);
     });
   });
 
-  // it(`Node clients should launch properly`, function() {
-  //   this.timeout(10 * 1000);
+  it(`node clients should launch properly`, function() {
+    this.timeout(10 * 1000);
 
-  //   return new Promise(async resolve => {
-  //     // run the server
-  //     const serverFilename = path.join(destDirname, 'server.js');
-  //     const serverProc = fork(serverFilename, [], {
-  //       cwd: appDirname,
-  //       stdio: 'inherit',
-  //     });
+    return new Promise(async resolve => {
+      // run the server
+      const serverFilename = path.join(destDirname, 'server.js');
+      const serverProc = fork(serverFilename, [], {
+        cwd: appDirname,
+        stdio: 'inherit',
+      });
+      proc.add(serverProc);
 
-  //     serverProc.on('message', async msg => {
-  //       console.log('> In test:', msg);
+      serverProc.on('message', async msg => {
+        console.log('> In test:', msg);
 
-  //       if (msg === 'node ack received') {
-  //         clearTimeout(timeout);
-  //         terminate(serverProc.pid);
-  //         terminate(clientProc.pid);
-  //         resolve();
-  //       }
-  //     });
+        if (msg === 'node result is valid') {
+          clearTimeout(timeout);
+          terminate(serverProc.pid);
+          terminate(clientProc.pid);
+          resolve();
+        }
+      });
 
-  //     await delay(CI ? 5000 : 1000);
-  //     const clientFilename = path.join(destDirname, 'clients', `${nodeClient}.js`);
-  //     const clientProc = fork(clientFilename, [], {
-  //       cwd: appDirname,
-  //       stdio: 'inherit',
-  //     });
+      await delay(CI ? 5000 : 1000);
+      const clientFilename = path.join(destDirname, 'clients', `${nodeClient}.js`);
+      const clientProc = fork(clientFilename, [], {
+        cwd: appDirname,
+        stdio: 'inherit',
+      });
+      proc.add(clientProc);
 
-  //     const timeout = setTimeout(() => {
-  //       terminate(serverProc.pid);
-  //       terminate(clientProc.pid);
-  //       assert.fail('No ack received after 5s');
-  //     }, 5000);
-  //   });
-  // });
+      const timeout = setTimeout(() => {
+        terminate(serverProc.pid);
+        terminate(clientProc.pid);
+        assert.fail('No valid result after 5s');
+      }, 5000);
+    });
+  });
 });

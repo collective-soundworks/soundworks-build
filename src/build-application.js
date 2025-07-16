@@ -7,9 +7,14 @@ import loadConfig from '@soundworks/helpers/load-config.js';
 import { AnsiUp } from 'ansi_up';
 import chalk from 'chalk';
 import chokidar from 'chokidar';
-import * as esbuild from 'esbuild';
+// import * as esbuild from 'esbuild';
 import klawSync from 'klaw-sync';
-import swc from '@swc/core';
+import swc from '@swc/core'; // for node processes
+
+import { build, watch } from 'rolldown'; // bundler
+// rollup / rolldown plugins
+import swcPlugin from '@rollup/plugin-swc';
+import dynamicImportVars from '@rollup/plugin-dynamic-import-vars';
 
 import {
   runtimeOrTarget,
@@ -81,7 +86,6 @@ async function compile(inputFolder, outputFolder, watch) {
     return Promise.all(promises);
   } else {
     const watcher = chokidar.watch(inputFolder, { ignoreInitial: true });
-
     watcher.on('add', pathname => doCompileOrCopy(pathname, inputFolder, outputFolder));
     watcher.on('change', pathname => doCompileOrCopy(pathname, inputFolder, outputFolder));
     watcher.on('unlink', pathname => {
@@ -119,93 +123,97 @@ console.log(\`${msg}\`);
   fs.writeFileSync(outputFile, jsErrorFile);
 }
 
-const esbuildSwcPlugin = {
-  name: 'swc',
-  setup(build) {
-    build.onLoad({ filter: /.*/ }, async args => {
-      const inputFilename = args.path;
-      const { code } = await swc.transformFile(inputFilename, {
-        sourceMaps: 'inline',
-      });
+// const esbuildSwcPlugin = {
+//   name: 'swc',
+//   setup(build) {
+//     build.onLoad({ filter: /.*/ }, async args => {
+//       const inputFilename = args.path;
+//       const { code } = await swc.transformFile(inputFilename, {
+//         sourceMaps: 'inline',
+//       });
 
-      return { contents: code };
-    });
+//       return { contents: code };
+//     });
 
-    build.onEnd(result => {
-      const outputFile = globalThis.outputFile;
+//     build.onEnd(result => {
+//       const outputFile = globalThis.outputFile;
 
-      if (result.errors.length > 0) {
-        // write first error in outputFile to have feedback on client side
-        const error = result.errors[0];
-        writeErrorInOutputFile(error.text, outputFile);
-      } else {
-        for (let filename in result.metafile.outputs) {
-          console.log(chalk.green(`> bundled\t ${filename}`));
-        }
-      }
-    });
-  },
-};
+//       if (result.errors.length > 0) {
+//         // write first error in outputFile to have feedback on client side
+//         const error = result.errors[0];
+//         writeErrorInOutputFile(error.text, outputFile);
+//       } else {
+//         for (let filename in result.metafile.outputs) {
+//           console.log(chalk.green(`> bundled\t ${filename}`));
+//         }
+//       }
+//     });
+//   },
+// };
 
 // check for per project build configuration options
-const overrideConfigPathname = path.join(cwd, 'esbuild.config.js');
-let overrideConfigFunction = null;
+// const overrideConfigPathname = path.join(cwd, 'esbuild.config.js');
+// let overrideConfigFunction = null;
 
-if (fs.existsSync(overrideConfigPathname)) {
-  const mod = await import(overrideConfigPathname);
-  overrideConfigFunction = mod.default;
+// if (fs.existsSync(overrideConfigPathname)) {
+//   const mod = await import(overrideConfigPathname);
+//   overrideConfigFunction = mod.default;
 
-  if (!isFunction(overrideConfigFunction)) {
-    throw new Error('Invalid "build.config.js" file: default export must be a function');
-  }
+//   if (!isFunction(overrideConfigFunction)) {
+//     throw new Error('Invalid "build.config.js" file: default export must be a function');
+//   }
 
-  if (!isPlainObject(overrideConfigFunction({}))) {
-    throw new Error('Invalid "build.config.js" file: default export must return an object');
-  }
-}
+//   if (!isPlainObject(overrideConfigFunction({}))) {
+//     throw new Error('Invalid "build.config.js" file: default export must return an object');
+//   }
+// }
 
-async function bundle(inputFile, outputFile, watch) {
-  // support for old file layout - no dynamic import
+async function bundle(inputFile, outputFile, watching) {
+  const options = {
+    input: inputFile,
+    output: {
+      format: 'iife',
+      sourcemap: true,
+    },
+    plugins: [
+      swcPlugin(),
+      dynamicImportVars({
+        errorWhenNoFilesFound: true,
+        warnOnError: true,
+      }),
+    ],
+    onwarn: warn => {
+      // swallow warnings from dynamicImportVars due to plugin scripting
+      if (warn.plugin === 'rollup-plugin-dynamic-import-variables'
+        && warn.message.includes('import(/* webpackIgnore: true */')) {
+        return;
+      }
 
-  // Use wildcard pattern to support dynamic import
-  // const dirname  = path.dirname(inputFile);
-  // const extension = path.extname(inputFile);
-  // const wildcard = path.join(dirname, `*${extension}`);
-  // const outputDir = path.dirname(outputFile);
-  // Store output pathname globally so that it can be used by swc plugin
-  // @note - would be nice to pass this through esbuild options, but
-  // `pluginData` does not work...
-  globalThis.outputFile = outputFile;
-
-  let options = {
-    entryPoints: [inputFile],
-    outfile: outputFile,
-    // outfile
-    bundle: true,
-    format: 'esm',
-    minify: true,
-    keepNames: true, // important for instanceof checks
-    sourcemap: 'linked',
-    metafile: true,
-    plugins: [esbuildSwcPlugin],
+      console.warn(warn.message);
+    }
   };
 
-  if (overrideConfigFunction !== null) {
-    options = overrideConfigFunction(options);
+  if (inputFile.endsWith('index.js')) { // no support for dynamic imports
+    options.output.file = outputFile;
+  } else {
+    options.output.dir = path.dirname(outputFile);
   }
 
-  if (!watch) {
+  // if (overrideConfigFunction !== null) {
+  //   options = overrideConfigFunction(options);
+  // }
+
+  if (!watching) {
     try {
-      await esbuild.build(options);
-      globalThis.outputFile = null;
+      await build(options);
+      console.log(inputFile, 'bundled');
     // eslint-disable-next-line no-unused-vars
     } catch (err) {
-      // just swallow errors as we don't want the process
-      // to return on first bundle pass
+      console.log(err);
+      // just swallow errors as we don't want the process to return on first bundle pass
     }
   } else {
-    const ctx = await esbuild.context(options);
-    await ctx.watch();
+    watch(options);
   }
 }
 
@@ -219,7 +227,7 @@ async function bundle(inputFile, outputFile, watch) {
  *    intact, we keep the copy to allow further support (typescript, etc.)
  *    This allows to not impose further structure to client code.
  * 2. Find browser clients in `src/clients` from `config/application`
- *    and build them into .build/public` using` webpack
+ *    and build them into .build/public` using` rolldown
  *
  * @note:
  * - exit with error message if `src/public` exists (reserved path)

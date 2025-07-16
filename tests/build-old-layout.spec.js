@@ -14,7 +14,7 @@ if (CI) {
   console.log('>>>>>>>>>>>>> RUNNING IN CI <<<<<<<<<<<<<<<<<<');
 }
 
-describe('# Build applications using old layout', () => {
+describe('# Build old layout', () => {
   const appDirname = path.join(process.cwd(), 'tests', 'test-old-layout');
   const srcDirname = path.join(appDirname, 'src');
   const destDirname = path.join(appDirname, '.build');
@@ -37,7 +37,19 @@ describe('# Build applications using old layout', () => {
     await delay(500);
   });
 
-  it('Should transpile  or copy all files in `src`', async function() {
+  after(function() {
+    this.timeout(10000);
+    fs.rmSync(path.join(appDirname, 'node_modules'), {
+      recursive: true,
+      force: true,
+    });
+  });
+
+  let proc = null;
+  beforeEach(() => proc = new Set());
+  afterEach(() => proc.forEach(p => terminate(p.pid)));
+
+  it('should transpile  or copy all files in `src`', async function() {
     this.timeout(10000);
 
     assert.isTrue(fs.existsSync(destDirname));
@@ -50,13 +62,14 @@ describe('# Build applications using old layout', () => {
     });
   });
 
-  it('Should properly bundle browser client files: `src/clients/${name}/index.js` -> `.build/public/${name}.js`', () => {
+  it('should properly bundle browser client files: `src/clients/${name}/index.js` -> `.build/public/${name}.js`', () => {
     const browserBundlePathname = path.join(destDirname, 'public', `${browserClient}.js`);
     assert.isTrue(fs.existsSync(browserBundlePathname), `File "${path.relative(appDirname, browserBundlePathname)}" not found`);
   });
 
-  it(`Browser clients should launch properly`, function() {
-    this.timeout(CI ? 30 * 1000 : 10 * 1000);
+  it(`browser clients should launch properly`, function() {
+    const timeoutDuration = CI ? 30 * 1000 : 10 * 1000;
+    this.timeout(timeoutDuration);
 
     return new Promise(async resolve => {
       // prepare puppeteer
@@ -73,13 +86,13 @@ describe('# Build applications using old layout', () => {
         cwd: appDirname,
         stdio: 'inherit',
       });
+      proc.add(serverProc);
 
       serverProc.on('message', async msg => {
         console.log('> In test:', msg);
 
         if (msg === 'browser ack received') {
           clearTimeout(timeout);
-          terminate(serverProc.pid);
           await browser.close();
           resolve();
         }
@@ -89,14 +102,13 @@ describe('# Build applications using old layout', () => {
       await page.goto('http://127.0.0.1:8000');
 
       const timeout = setTimeout(async () => {
-        terminate(serverProc.pid);
         await browser.close();
-        assert.fail('No ack received after 5s');
-      }, CI ? 30 * 1000 : 10 * 1000);
+        assert.fail('No ack received after', timeoutDuration, 's');
+      }, timeoutDuration);
     });
   });
 
-  it(`Node clients should launch properly`, function() {
+  it(`node clients should launch properly`, function() {
     this.timeout(10 * 1000);
 
     return new Promise(async resolve => {
@@ -106,14 +118,13 @@ describe('# Build applications using old layout', () => {
         cwd: appDirname,
         stdio: 'inherit',
       });
+      proc.add(serverProc);
 
       serverProc.on('message', async msg => {
         console.log('> In test:', msg);
 
         if (msg === 'node ack received') {
           clearTimeout(timeout);
-          terminate(serverProc.pid);
-          terminate(clientProc.pid);
           resolve();
         }
       });
@@ -124,10 +135,9 @@ describe('# Build applications using old layout', () => {
         cwd: appDirname,
         stdio: 'inherit',
       });
+      proc.add(clientProc);
 
       const timeout = setTimeout(() => {
-        terminate(serverProc.pid);
-        terminate(clientProc.pid);
         assert.fail('No ack received after 5s');
       }, 5000);
     });

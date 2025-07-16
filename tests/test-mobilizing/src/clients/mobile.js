@@ -12,21 +12,18 @@ import { html, render } from 'lit';
 async function main($container) {
   const config = loadConfig();
   const client = new Client(config);
-  let test = null;;
+  let imported = false;;
 
-  // Eventually register plugins
-  // client.pluginManager.register('my-plugin', plugin);
   client.pluginManager.register('sketch-manager', pluginSketchManager, {
     root: $container,
     import: async (sketch) => {
       const { default: SketchClass } = await import(
-        `../../sketches/${sketch}/clients/${client.role}/index.js`
+        `../sketches/${sketch}/clients/${client.role}/index.js`
       );
 
-      if (test !== null) {
-        await test.set({ browserAck: true });
-      }
       // if import fails, we don't go here
+      imported = true;
+
       return SketchClass;
     },
   });
@@ -36,8 +33,15 @@ async function main($container) {
   launcher.register(client, { initScreensContainer: $container });
 
   await client.start();
+  console.log('after start', client);
 
-  test = await client.stateManager.attach('test');
+  // throw new Error('test line 38');
+
+  const test = await client.stateManager.attach('test');
+  if (imported !== null) {
+    console.log('send browser ack');
+    await test.set({ browserAck: true });
+  }
 
   function renderApp() {
     render(html`

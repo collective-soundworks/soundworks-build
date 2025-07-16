@@ -32,7 +32,7 @@ const utilsDistFilename = path.join(appDirname, '.build', 'lib', 'utils.js');
 const utilsAdd = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-add.js');
 const utilsMult = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-mult.js');
 
-describe('# watch-process', () => {
+describe('# Watch process', () => {
   before(async function() {
     this.timeout(30000);
 
@@ -45,6 +45,14 @@ describe('# watch-process', () => {
     // re-init lib/utils.js
     const code = fs.readFileSync(utilsAdd).toString();
     fs.writeFileSync(utilsSrcFilename, code);
+  });
+
+  after(function() {
+    this.timeout(10000);
+    fs.rmSync(path.join(appDirname, 'node_modules'), {
+      recursive: true,
+      force: true,
+    });
   });
 
   beforeEach(() => {

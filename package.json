@@ -32,6 +32,9 @@
     "soundworks"
   ],
   "dependencies": {
+    "@rollup/plugin-dynamic-import-vars": "^2.1.5",
+    "@rollup/plugin-swc": "^0.4.0",
+    "@rollup/plugin-typescript": "^12.1.4",
     "@swc/core": "^1.5.7",
     "ansi_up": "^6.0.2",
     "chalk": "^5.1.2",
@@ -39,18 +42,22 @@
     "commander": "^12.0.0",
     "esbuild": "^0.21.3",
     "klaw-sync": "^6.0.0",
-    "portfinder": "^1.0.32"
+    "portfinder": "^1.0.32",
+    "rolldown": "^1.0.0-beta.22",
+    "rollup": "^4.45.1"
   },
   "devDependencies": {
     "@ircam/eslint-config": "^2.0.1",
     "@ircam/sc-utils": "^1.9.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
     "chai": "^5.1.2",
     "eslint": "^9.18.0",
     "mocha": "^11.0.1",
     "prompts": "^2.4.2",
     "puppeteer": "^24.11.1",
     "puppeteer-core": "^24.11.1",
-    "terminate": "^2.8.0"
+    "terminate": "^2.8.0",
+    "vite-plugin-dynamic-import": "^1.6.0"
   },
   "peerDependencies": {
     "@soundworks/core": "^5.0.0",

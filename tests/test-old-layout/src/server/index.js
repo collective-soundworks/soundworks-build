@@ -10,7 +10,6 @@ import '../utils/catch-unhandled-errors.js';
 // - Wizard & Tools:        `npx soundworks`
 
 const config = loadConfig(process.env.ENV, import.meta.url);
-config.verbose = false;
 
 console.log(`
 --------------------------------------------------------
@@ -19,13 +18,8 @@ console.log(`
 --------------------------------------------------------
 `);
 
-const server = new Server({
-  app: config.app,
-  env: {
-    ...config.env,
-    // verbose: false,
-  },
-});
+config.env.verbose = false;
+const server = new Server(config);
 // configure the server for usage within this application template
 server.useDefaultApplicationTemplate();
 
