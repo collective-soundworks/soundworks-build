@@ -44,7 +44,9 @@
     "klaw-sync": "^6.0.0",
     "portfinder": "^1.0.32",
     "rolldown": "^1.0.0-beta.22",
-    "rollup": "^4.45.1"
+    "rollup": "^4.45.1",
+    "rollup-plugin-vue": "^6.0.0",
+    "vue": "^3.5.17"
   },
   "devDependencies": {
     "@ircam/eslint-config": "^2.0.1",

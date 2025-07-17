@@ -113,63 +113,47 @@ function writeErrorInOutputFile(errorMessage, outputFile) {
 
   const ansiUp = new AnsiUp();
   const html = ansiUp.ansi_to_html(msg);
-  const style = 'width: 100%; margin: 20px; padding: 20px; font-size: 12px; background-color: white; color: #121212; border: 1px solid #d9534f; border-radius: 1px;';
+  const style = 'width: 100%; margin: 0; padding: 20px; font-size: 12px; background-color: white; color: #121212; border: 1px solid #d9534f; border-radius: 1px;';
 
   const jsErrorFile = `
 document.body.innerHTML = \`<pre style="${style}"><code>${html}</code></pre>\`;
+document.body.classList.remove('loading');
 console.log(\`${msg}\`);
   `;
 
   fs.writeFileSync(outputFile, jsErrorFile);
 }
 
-// const esbuildSwcPlugin = {
-//   name: 'swc',
-//   setup(build) {
-//     build.onLoad({ filter: /.*/ }, async args => {
-//       const inputFilename = args.path;
-//       const { code } = await swc.transformFile(inputFilename, {
-//         sourceMaps: 'inline',
-//       });
-
-//       return { contents: code };
-//     });
-
-//     build.onEnd(result => {
-//       const outputFile = globalThis.outputFile;
-
-//       if (result.errors.length > 0) {
-//         // write first error in outputFile to have feedback on client side
-//         const error = result.errors[0];
-//         writeErrorInOutputFile(error.text, outputFile);
-//       } else {
-//         for (let filename in result.metafile.outputs) {
-//           console.log(chalk.green(`> bundled\t ${filename}`));
-//         }
-//       }
-//     });
-//   },
-// };
+const onErrorPlugin = function({ outputFile }) {
+  return {
+    name: 'onerror',
+    buildEnd(err) {
+      if (err) {
+        writeErrorInOutputFile(err.message, outputFile);
+      } else {
+        console.log(chalk.green(`> bundled\t ${path.relative(process.cwd(), outputFile)}`));
+      }
+    },
+  };
+};
 
 // check for per project build configuration options
-// const overrideConfigPathname = path.join(cwd, 'esbuild.config.js');
-// let overrideConfigFunction = null;
+const overrideConfigFilename = 'rolldown.config.js';
+const overrideConfigPathname = path.join(cwd, overrideConfigFilename);
+let overrideConfigFunction = null;
+console.log(overrideConfigPathname, fs.existsSync(overrideConfigPathname));
 
-// if (fs.existsSync(overrideConfigPathname)) {
-//   const mod = await import(overrideConfigPathname);
-//   overrideConfigFunction = mod.default;
+if (fs.existsSync(overrideConfigPathname)) {
+  const mod = await import(overrideConfigPathname);
+  overrideConfigFunction = mod.default;
 
-//   if (!isFunction(overrideConfigFunction)) {
-//     throw new Error('Invalid "build.config.js" file: default export must be a function');
-//   }
-
-//   if (!isPlainObject(overrideConfigFunction({}))) {
-//     throw new Error('Invalid "build.config.js" file: default export must return an object');
-//   }
-// }
+  if (!isFunction(overrideConfigFunction)) {
+    throw new Error('Invalid "build.config.js" file: default export must be a function');
+  }
+}
 
 async function bundle(inputFile, outputFile, watching) {
-  const options = {
+  let options = {
     input: inputFile,
     output: {
       format: 'iife',
@@ -181,6 +165,9 @@ async function bundle(inputFile, outputFile, watching) {
         errorWhenNoFilesFound: true,
         warnOnError: true,
       }),
+      onErrorPlugin({
+        outputFile,
+      }),
     ],
     onwarn: warn => {
       // swallow warnings from dynamicImportVars due to plugin scripting
@@ -190,7 +177,7 @@ async function bundle(inputFile, outputFile, watching) {
       }
 
       console.warn(warn.message);
-    }
+    },
   };
 
   if (inputFile.endsWith('index.js')) { // no support for dynamic imports
@@ -199,18 +186,20 @@ async function bundle(inputFile, outputFile, watching) {
     options.output.dir = path.dirname(outputFile);
   }
 
-  // if (overrideConfigFunction !== null) {
-  //   options = overrideConfigFunction(options);
-  // }
+  if (overrideConfigFunction !== null) {
+    options = overrideConfigFunction(options);
+    console.log(options);
+
+    if (!isPlainObject(options)) {
+      throw new Error(`Invalid "${overrideConfigFilename}" file: default export must return an object`);
+    }
+  }
 
   if (!watching) {
     try {
       await build(options);
-      console.log(inputFile, 'bundled');
-    // eslint-disable-next-line no-unused-vars
-    } catch (err) {
-      console.log(err);
-      // just swallow errors as we don't want the process to return on first bundle pass
+    } catch {
+      // console.log(err);
     }
   } else {
     watch(options);

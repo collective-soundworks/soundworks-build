@@ -1,0 +1,6 @@
+name: test-error-reporting
+author: ""
+clients:
+  player:
+    runtime: browser
+    default: true
