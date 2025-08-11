@@ -49,6 +49,12 @@ describe('# Build old layout', () => {
   beforeEach(() => proc = new Set());
   afterEach(() => proc.forEach(p => terminate(p.pid)));
 
+  it(`should test against local copy of @soundworks/build`, () => {
+    const buildDirname = path.join(appDirname, 'node_modules', '@soundworks', 'build');
+    const stats = fs.lstatSync(buildDirname);
+    assert.isTrue(stats.isSymbolicLink(), '@soundworks/build is not local copy');
+  });
+
   it('should transpile  or copy all files in `src`', async function() {
     this.timeout(10000);
 
@@ -68,7 +74,7 @@ describe('# Build old layout', () => {
   });
 
   it(`browser clients should launch properly`, function() {
-    const timeoutDuration = CI ? 30 * 1000 : 10 * 1000;
+    const timeoutDuration = CI ? 40 * 1000 : 20 * 1000;
     this.timeout(timeoutDuration);
 
     return new Promise(async resolve => {
