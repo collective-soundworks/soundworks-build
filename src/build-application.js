@@ -138,17 +138,16 @@ const onErrorPlugin = function({ outputFile }) {
 };
 
 // check for per project build configuration options
-const overrideConfigFilename = 'rolldown.config.js';
+const overrideConfigFilename = 'build.config.js';
 const overrideConfigPathname = path.join(cwd, overrideConfigFilename);
 let overrideConfigFunction = null;
-console.log(overrideConfigPathname, fs.existsSync(overrideConfigPathname));
 
 if (fs.existsSync(overrideConfigPathname)) {
   const mod = await import(overrideConfigPathname);
   overrideConfigFunction = mod.default;
 
   if (!isFunction(overrideConfigFunction)) {
-    throw new Error('Invalid "build.config.js" file: default export must be a function');
+    throw new Error(`Invalid "${overrideConfigFilename}" file: default export must be a function`);
   }
 }
 
