@@ -76,7 +76,7 @@ describe('# Build typescript', () => {
     assert.isTrue(fs.existsSync(browserBundlePathname), `File "${path.relative(appDirname, browserBundlePathname)}" not found`);
   });
 
-  it.only(`browser clients should launch properly`, function() {
+  it(`browser clients should launch properly`, function() {
     const timeoutDuration = CI ? 40 * 1000 : 20 * 1000;
     this.timeout(timeoutDuration);
 
