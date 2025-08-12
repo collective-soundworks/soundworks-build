@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@ircam/eslint-config": "^2.0.1",
-    "@soundworks/build": "latest",
+    "@soundworks/build": "file:../../",
     "@soundworks/create": "latest",
     "concurrently": "^8.2.2",
     "eslint": "^9.18.0",

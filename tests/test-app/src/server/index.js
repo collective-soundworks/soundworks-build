@@ -22,7 +22,7 @@ const server = new Server({
   app: config.app,
   env: {
     ...config.env,
-    // verbose: false,
+    verbose: false,
   },
 });
 // configure the server for usage within this application template

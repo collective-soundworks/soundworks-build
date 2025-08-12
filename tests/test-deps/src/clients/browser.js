@@ -28,6 +28,8 @@ async function main($container) {
   // Eventually register plugins
   // client.pluginManager.register('my-plugin', plugin);
 
+  console.log(PluginCheckin);
+
   // cf. https://soundworks.dev/tools/helpers.html#browserlauncher
   launcher.register(client, { initScreensContainer: $container });
 

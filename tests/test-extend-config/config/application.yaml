@@ -1,0 +1,6 @@
+name: build-extend-config
+author: ""
+clients:
+  player:
+    runtime: browser
+    default: true

@@ -7,7 +7,7 @@ import { assert } from 'chai';
 
 const appDirname = path.join(process.cwd(), 'tests', 'test-app');
 
-describe('delete-build', () => {
+describe('# Delete build', () => {
   before(async function() {
     this.timeout(30000);
 
@@ -16,6 +16,20 @@ describe('delete-build', () => {
       execSync('npm install', { cwd: appDirname, stdio: 'inherit' });
       await delay(1000);
     }
+  });
+
+  after(function() {
+    this.timeout(10000);
+    fs.rmSync(path.join(appDirname, 'node_modules'), {
+      recursive: true,
+      force: true,
+    });
+  });
+
+  it('should test against local copy of @soundworks/build', () => {
+    const buildDirname = path.join(appDirname, 'node_modules', '@soundworks', 'build');
+    const stats = fs.lstatSync(buildDirname);
+    assert.isTrue(stats.isSymbolicLink(), '@soundworks/build is not local copy');
   });
 
   it('should properly clean .build directory', async function() {

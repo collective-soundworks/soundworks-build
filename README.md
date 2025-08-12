@@ -4,7 +4,7 @@ Build tools for [`soundworks`](https://soundworks.dev) applications.
 
 The build tools are mainly wrappers around:
 - [swc](https://swc.rs/)
-- [esbuild](https://esbuild.github.io/)
+- [rolldown](https://rolldown.rs/)
 
 ## Install
 
@@ -33,6 +33,14 @@ Options:
   -D, --delete-build          delete build directory
   -h, --help                  display help for command
 ```
+
+## Notes
+
+### Extending configuration
+
+### Dynamic imports
+
+### Typescript support
 
 ## License
 

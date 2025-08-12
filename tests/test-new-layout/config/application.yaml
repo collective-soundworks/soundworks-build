@@ -1,0 +1,8 @@
+name: test-new-layout
+author: ""
+clients:
+  player:
+    runtime: browser
+    default: true
+  thing:
+    runtime: node

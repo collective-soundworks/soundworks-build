@@ -32,7 +32,7 @@ const utilsDistFilename = path.join(appDirname, '.build', 'lib', 'utils.js');
 const utilsAdd = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-add.js');
 const utilsMult = path.join(process.cwd(), 'tests', 'test-app-fixtures', 'utils-mult.js');
 
-describe('# watch-process', () => {
+describe('# Watch process', () => {
   before(async function() {
     this.timeout(30000);
 
@@ -45,6 +45,14 @@ describe('# watch-process', () => {
     // re-init lib/utils.js
     const code = fs.readFileSync(utilsAdd).toString();
     fs.writeFileSync(utilsSrcFilename, code);
+  });
+
+  after(function() {
+    this.timeout(10000);
+    fs.rmSync(path.join(appDirname, 'node_modules'), {
+      recursive: true,
+      force: true,
+    });
   });
 
   beforeEach(() => {
@@ -61,6 +69,12 @@ describe('# watch-process', () => {
   });
 
   describe('## restart process', () => {
+    it(`Should test against local copy of @soundworks/build`, () => {
+      const buildDirname = path.join(appDirname, 'node_modules', '@soundworks', 'build');
+      const stats = fs.lstatSync(buildDirname);
+      assert.isTrue(stats.isSymbolicLink(), '@soundworks/build is not local copy');
+    });
+
     it('should restart process when changes are triggered locally by `build-application`', async function() {
       const numIterations = LONG_RUN ? 20 : 5;
       this.timeout((CI ? 50000 : 10000) + numIterations * 2000);
@@ -173,6 +187,12 @@ describe('# watch-process', () => {
   });
 
   describe('## check --enable-source-maps flag', () => {
+    it(`Should test against local copy of @soundworks/build`, () => {
+      const buildDirname = path.join(appDirname, 'node_modules', '@soundworks', 'build');
+      const stats = fs.lstatSync(buildDirname);
+      assert.isTrue(stats.isSymbolicLink(), '@soundworks/build is not local copy');
+    });
+
     it('should report errors from source files', async function() {
       const numIterations = LONG_RUN ? 20 : 5;
       this.timeout((CI ? 50000 : 10000) + numIterations * 2000);

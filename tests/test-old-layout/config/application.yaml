@@ -1,0 +1,10 @@
+name: test-app
+author: ""
+clients:
+  thing:
+    runtime: node
+  player:
+    runtime: browser
+    default: true
+  manual:
+    runtime: node

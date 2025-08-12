@@ -1,0 +1,47 @@
+import '@soundworks/helpers/polyfills.js';
+import '@soundworks/helpers/catch-unhandled-errors.js';
+import { Server } from '@soundworks/core/server.js';
+import { loadConfig, configureHttpRouter } from '@soundworks/helpers/server.js';
+
+// - General documentation: https://soundworks.dev/
+// - API documentation:     https://soundworks.dev/api
+// - Issue Tracker:         https://github.com/collective-soundworks/soundworks/issues
+// - Wizard & Tools:        `npx soundworks`
+
+const config = loadConfig(process.env.ENV, import.meta.url);
+
+console.log(`
+--------------------------------------------------------
+- launching "${config.app.name}" in "${process.env.ENV || 'default'}" environment
+- [pid: ${process.pid}]
+--------------------------------------------------------
+`);
+
+config.env.verbose = false;
+const server = new Server(config);
+configureHttpRouter(server);
+
+server.stateManager.defineClass('test', {
+  browserAck: {
+    type: 'boolean',
+    default: false,
+  },
+  nodeAck: {
+    type: 'boolean',
+    default: false,
+  },
+});
+
+await server.start();
+
+const test = await server.stateManager.create('test');
+test.onUpdate(updates => {
+  if (updates.browserAck === true) {
+    console.log('> Browser ack received');
+    process.send('browser ack received');
+  }
+  if (updates.nodeAck === true) {
+    console.log('> Node ack received');
+    process.send('node ack received');
+  }
+});
