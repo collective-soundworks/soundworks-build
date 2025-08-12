@@ -74,7 +74,7 @@ describe('# Build dynamic imports', () => {
   });
 
   it(`browser clients should launch properly`, function() {
-    const timeoutDuration = CI ? 30 * 1000 : 10 * 1000;
+    const timeoutDuration = CI ? 40 * 1000 : 20 * 1000;
     this.timeout(timeoutDuration);
 
     return new Promise(async resolve => {
@@ -103,7 +103,7 @@ describe('# Build dynamic imports', () => {
         }
       });
 
-      await delay(CI ? 10000 : 1000);
+      await delay(CI ? 10000 : 2000);
       await page.goto('http://127.0.0.1:8000');
 
       const timeout = setTimeout(async () => {

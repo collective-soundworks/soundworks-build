@@ -88,7 +88,6 @@ describe('# Build old layout', () => {
 
       const serverFilename = path.join(destDirname, 'server', 'index.js');
       const serverProc = fork(serverFilename, [], {
-        // signal: controller.signal,
         cwd: appDirname,
         stdio: 'inherit',
       });
