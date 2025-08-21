@@ -128,6 +128,7 @@ const onErrorPlugin = function({ outputFile }) {
   return {
     name: 'onerror',
     buildEnd(err) {
+      // @note: missing imports doesn't seem to be
       if (err) {
         writeErrorInOutputFile(err.message, outputFile);
       } else {
@@ -187,7 +188,6 @@ async function bundle(inputFile, outputFile, watching) {
 
   if (overrideConfigFunction !== null) {
     options = overrideConfigFunction(options);
-    console.log(options);
 
     if (!isPlainObject(options)) {
       throw new Error(`Invalid "${overrideConfigFilename}" file: default export must return an object`);
@@ -197,8 +197,9 @@ async function bundle(inputFile, outputFile, watching) {
   if (!watching) {
     try {
       await build(options);
-    } catch {
-      // console.log(err);
+    } catch (err) {
+      writeErrorInOutputFile(err.message, outputFile);
+      console.log(err);
     }
   } else {
     watch(options);
