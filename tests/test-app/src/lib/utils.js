@@ -1,1 +1,1 @@
-export const execute = (a, b) => a * b;
+export const execute = (a, b) => a + b;
