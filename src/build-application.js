@@ -152,7 +152,7 @@ if (fs.existsSync(overrideConfigPathname)) {
   }
 }
 
-async function bundle(inputFile, outputFile, watching) {
+function getBundleConfig(inputFile, outputFile) {
   let options = {
     input: inputFile,
     output: {
@@ -194,16 +194,7 @@ async function bundle(inputFile, outputFile, watching) {
     }
   }
 
-  if (!watching) {
-    try {
-      await build(options);
-    } catch (err) {
-      writeErrorInOutputFile(err.message, outputFile);
-      console.log(err);
-    }
-  } else {
-    watch(options);
-  }
+  return options;
 }
 
 /**
@@ -222,7 +213,7 @@ async function bundle(inputFile, outputFile, watching) {
  * - exit with error message if `src/public` exists (reserved path)
  * -------------------------------------------------------------
  */
-export default async function buildApplication(watch = false) {
+export default async function buildApplication(watchFlag = false) {
   // `src/public` cannot be used, is reserved by build system
   if (fs.existsSync(path.join('src', 'public'))) {
     console.error(chalk.red(`[@soundworks/template-build]
@@ -232,14 +223,19 @@ export default async function buildApplication(watch = false) {
   }
 
   // 1. Transpile `src` to `.build`
-  const compileMsg = `+ ${watch ? 'watching' : 'transpiling'} \`${SRC_DIR}\` to \`${BUILD_DIR}\``;
+  const compileMsg = `+ ${watchFlag ? 'watching' : 'transpiling'} \`${SRC_DIR}\` to \`${BUILD_DIR}\``;
   console.log(chalk.yellow(compileMsg));
-  await compile(SRC_DIR, BUILD_DIR, watch);
+  await compile(SRC_DIR, BUILD_DIR, watchFlag);
 
   // 2. Build "browser" clients from `src` to `.build/public`
   // Get application config file get list of declared browser clients
   const config = loadConfig(process.env.ENV);
   const clientsConfig = config.app.clients;
+
+  // @note 20é6/01/15 - we need to run rolldown watch with array of configuration
+  // cf. https://rolldown.rs/guide/getting-started#multiple-builds-in-the-same-config
+  // because it stops working with more than 6 watch in parallel
+  const bundleOptions = [];
 
   // Bundle all valid declared client
   for (let role in clientsConfig) {
@@ -247,13 +243,28 @@ export default async function buildApplication(watch = false) {
       continue;
     }
 
-    const bundleMsg = `+ ${watch ? 'watching' : 'bundling'} browser client "${role}"`;
+    const bundleMsg = `+ ${watchFlag ? 'watching' : 'bundling'} browser client "${role}"`;
     console.log(chalk.yellow(bundleMsg));
 
     const inputFile = path.join(cwd, locateProcessEntryPoint(role, SRC_DIR));
     const outputFile = path.join(cwd, BUILD_DIR, 'public', `${role}.js`);
 
-    bundle(inputFile, outputFile, watch);
+    const options = getBundleConfig(inputFile, outputFile);
+
+    if (!watchFlag) {
+      try {
+        await build(options);
+      } catch (err) {
+        writeErrorInOutputFile(err.message, outputFile);
+        console.log(err);
+      }
+    } else {
+      bundleOptions.push(options);
+    }
+  }
+
+  if (watchFlag && bundleOptions.length > 0) {
+    watch(bundleOptions);
   }
 
   process.on('SIGINT', function() {
