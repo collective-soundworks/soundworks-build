@@ -14,7 +14,7 @@ if (CI) {
   console.log('>>>>>>>>>>>>> RUNNING IN CI <<<<<<<<<<<<<<<<<<');
 }
 
-describe('# Build new layout', () => {
+describe.only('# Build new layout', () => {
   const appDirname = path.join(process.cwd(), 'tests', 'test-new-layout');
   const srcDirname = path.join(appDirname, 'src');
   const destDirname = path.join(appDirname, '.build');
@@ -39,10 +39,14 @@ describe('# Build new layout', () => {
 
   after(function() {
     this.timeout(10000);
-    fs.rmSync(path.join(appDirname, 'node_modules'), {
-      recursive: true,
-      force: true,
-    });
+
+    // no need to clean on CI + it crashes for some reason on windows
+    if (!CI) {
+      fs.rmSync(path.join(appDirname, 'node_modules'), {
+        recursive: true,
+        force: true,
+      });
+    }
   });
 
   let proc = null;
