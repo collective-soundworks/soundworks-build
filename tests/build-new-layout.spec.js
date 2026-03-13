@@ -1,12 +1,15 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { execSync, fork } from 'node:child_process';
+import { promisify } from 'node:util';
 
 import { delay } from '@ircam/sc-utils';
 import { assert } from 'chai';
 import klawSync from 'klaw-sync';
 import puppeteer from 'puppeteer';
-import terminate from 'terminate';
+import kill from 'tree-kill';
+
+const asyncKill = promisify(kill);
 
 const CI = process.argv.includes('--ci');
 
@@ -51,7 +54,11 @@ describe.only('# Build new layout', () => {
 
   let proc = null;
   beforeEach(() => proc = new Set());
-  afterEach(() => proc.forEach(p => terminate(p.pid)));
+  afterEach(async () => {
+    for (let p of proc) {
+      await asyncKill(p.pid);
+    }
+  });
 
   it(`should test against local copy of @soundworks/build`, () => {
     const buildDirname = path.join(appDirname, 'node_modules', '@soundworks', 'build');
@@ -102,7 +109,7 @@ describe.only('# Build new layout', () => {
 
         if (msg === 'browser ack received') {
           clearTimeout(timeout);
-          terminate(serverProc.pid);
+          await asyncKill(serverProc.pid);
           await browser.close();
           resolve();
         }
