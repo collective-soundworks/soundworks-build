@@ -5,7 +5,9 @@ jobs:
   test:
     strategy:
       matrix:
-        runner: [ubuntu-latest, windows-latest]
+        # runner: [ubuntu-latest, windows-latest]
+        # setup-rsync fails because it detects an ubuntu system...
+        runner: [ubuntu-latest]
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
