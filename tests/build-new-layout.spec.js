@@ -17,7 +17,7 @@ if (CI) {
   console.log('>>>>>>>>>>>>> RUNNING IN CI <<<<<<<<<<<<<<<<<<');
 }
 
-describe.only('# Build new layout', () => {
+describe('# Build new layout', () => {
   const appDirname = path.join(process.cwd(), 'tests', 'test-new-layout');
   const srcDirname = path.join(appDirname, 'src');
   const destDirname = path.join(appDirname, '.build');

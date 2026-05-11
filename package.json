@@ -34,27 +34,27 @@
   "dependencies": {
     "@rollup/plugin-dynamic-import-vars": "^2.1.5",
     "@rollup/plugin-swc": "^0.4.0",
-    "@swc/core": "^1.15.2",
+    "@swc/core": "^1.15.33",
     "ansi_up": "^6.0.2",
     "chalk": "^5.1.2",
-    "chokidar": "^3.5.3",
-    "commander": "^12.0.0",
-    "klaw-sync": "^6.0.0",
+    "chokidar": "^5.0.0",
+    "commander": "^14.0.3",
+    "klaw-sync": "^7.0.0",
     "portfinder": "^1.0.32",
-    "rolldown": "^1.0.0-beta.22",
-    "terminate": "^2.8.0"
+    "rolldown": "^1.0.0",
+    "terminate": "^2.8.0",
+    "tree-kill": "^1.2.2"
   },
   "devDependencies": {
     "@ircam/eslint-config": "^2.0.1",
-    "@ircam/sc-utils": "^1.9.0",
+    "@ircam/sc-utils": "^1.13.0",
     "@rollup/plugin-node-resolve": "^16.0.1",
-    "chai": "^5.1.2",
-    "eslint": "^9.18.0",
-    "mocha": "^11.0.1",
+    "chai": "^6.2.2",
+    "eslint": "^10.3.0",
+    "mocha": "^11.7.5",
     "prompts": "^2.4.2",
-    "puppeteer": "^24.11.1",
-    "puppeteer-core": "^24.11.1",
-    "tree-kill": "^1.2.2"
+    "puppeteer": "^24.43.1",
+    "puppeteer-core": "^24.43.1"
   },
   "peerDependencies": {
     "@soundworks/core": "^5.0.0",
